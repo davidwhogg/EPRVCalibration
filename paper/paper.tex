@@ -48,17 +48,17 @@ where the $c_{ij}$ are coefficients.
 If the space of all calibration possibilities is in fact
 $K$-dimensional (where I am thinking of this as being a small integer,
 like $K=3$ or $K=8$ or thereabouts), and if the calibration variations are so
-small that we can linearize, then the function $f(x,y;m,\theta_{n})$ could
+small that we can linearize, then the function $f(x,y,m;\theta_{n})$ could
 be replaced with a tiny model
 \begin{equation}
 \lambda = g_0(x,y,m) + \sum_{k=1}^K a_{nk}\,g_k(x,y,m)
 \quad ,
 \end{equation}
 where
-$g_0(x,y;m)$ is the fiducial or mean or standard calibration of the
+$g_0(x,y,m)$ is the fiducial or mean or standard calibration of the
 spectrograph,
 the $a_{nk}$ are scalar amplitudes,
-and the $g_k(x,y;m)$ are basis functions expressing the ``directions''
+and the $g_k(x,y,m)$ are basis functions expressing the ``directions''
 in calibration space that the spectrograph can depart from the
 fiducial calibration.
 The challenge is to learn these basis functions from the data, and get
