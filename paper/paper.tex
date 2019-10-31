@@ -27,7 +27,7 @@ Given an exposure $n$, and order $m$, there is a relationship between
 the two-dimensional $(x,y)$-position on the detector and the
 wavelength $\lambda$
 \begin{equation}
-\lambda = f(x,y;m,\theta_{n})
+\lambda = f(x,y,m;\theta_{n})
 \quad ,
 \end{equation}
 where $\theta_{n}$ is a big blob of parameters for this exposure.
@@ -37,7 +37,13 @@ For now I am going to ignore that fact, but I think what I say here
 could be adapted to any \expres\ conventions.
 Right now in the \expres\ pipeline the $\theta_{n}$ comprises the
 amplitudes of some 9th-ish-order polynomial in $x$ and $n$, possibly
-ignoring $y$?.
+ignoring $y$?
+If so, they have
+\begin{equation}
+\lambda = \sum_{i,j} c_{ij}\, x^i\,m^j
+\quad ,
+\end{equation}
+where the $c_{ij}$ are coefficients.
 
 If the space of all calibration possibilities is in fact
 $K$-dimensional (where I am thinking of this as being a small integer,
@@ -45,7 +51,7 @@ like $K=3$ or $K=8$ or thereabouts), and if the calibration variations are so
 small that we can linearize, then the function $f(x,y;m,\theta_{n})$ could
 be replaced with a tiny model
 \begin{equation}
-\lambda = g_0(x,y;m) + \sum_{k=1}^K a_{nk}\,g_k(x,y;m)
+\lambda = g_0(x,y,m) + \sum_{k=1}^K a_{nk}\,g_k(x,y,m)
 \quad ,
 \end{equation}
 where
