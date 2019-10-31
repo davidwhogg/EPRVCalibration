@@ -1,0 +1,61 @@
+% This document is part of the EPRVCalibration project
+% Copyright 2019 the authors. All rights reserved.
+
+\documentclass[12pt, letterpaper]{article}
+
+% typesetting words
+\newcommand{\project}[1]{\textsl{#1}}
+\newcommand{\acronym}[1]{{\small{#1}}}
+\newcommand{\expres}{\project{\acronym{EXPRES}}}
+
+% margins and page setup, etc
+\addtolength{\textheight}{1.00in}
+\addtolength{\topmargin}{-0.50in}
+\sloppy\sloppypar\raggedbottom\frenchspacing
+
+\begin{document}
+
+\section*{Method}
+
+The idea is that the wavelength solution is going to live in a
+low-dimensional space, where the degrees of freedom are set by the
+degrees of freedom of the spectrograph hardware.
+
+First, some definitions.
+The way I (Hogg) think about this is the following:
+Given an exposure $n$, and order $m$, there is a relationship between
+the two-dimensional $(x,y)$-position on the detector and the
+wavelength $\lambda$
+\begin{equation}
+\lambda = f(x,y;m,\theta_{n})
+\quad ,
+\end{equation}
+where $\theta_{n}$ is a big blob of parameters for this exposure.
+This is not precisely how the \expres\ team thinks about the problem,
+I (Hogg) think.
+For now I am going to ignore that fact, but I think what I say here
+could be adapted to any \expres\ conventions.
+Right now in the \expres\ pipeline the $\theta_{n}$ comprises the
+amplitudes of some 9th-ish-order polynomial in $x$ and $n$, possibly
+ignoring $y$?.
+
+If the space of all calibration possibilities is in fact
+$K$-dimensional (where I am thinking of this as being a small integer,
+like $K=3$ or $K=8$ or thereabouts), and if the calibration variations are so
+small that we can linearize, then the function $f(x,y;m,\theta_{n})$ could
+be replaced with a tiny model
+\begin{equation}
+\lambda = g_0(x,y;m) + \sum_{k=1}^K a_{nk}\,g_k(x,y;m)
+\quad ,
+\end{equation}
+where
+$g_0(x,y;m)$ is the fiducial or mean or standard calibration of the
+spectrograph,
+the $a_{nk}$ are scalar amplitudes,
+and the $g_k(x,y;m)$ are basis functions expressing the ``directions''
+in calibration space that the spectrograph can depart from the
+fiducial calibration.
+The challenge is to learn these basis functions from the data, and get
+the $K$ amplitudes $a_{nk}$ for every exposure $n$.
+
+\end{document}
