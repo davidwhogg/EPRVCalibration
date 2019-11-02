@@ -61,7 +61,7 @@ Given an exposure $n$, and order $m$, there is a relationship between
 the two-dimensional $(x,y)$-position on the detector and the
 wavelength $\lambda$
 \begin{equation}
-\lambda = f(x,y,m;\theta_{n})
+\lambda(x,y,m,n) = f(x,y,m;\theta_{n})
 \quad ,
 \end{equation}
 where $\theta_{n}$ is a big blob of parameters for this exposure.
@@ -72,12 +72,45 @@ could be adapted to any \expres\ conventions.
 Right now in the \expres\ pipeline the $\theta_{n}$ comprises the
 amplitudes of some 9th-ish-order polynomial in $x$ and $n$, possibly
 ignoring $y$?
-If so, they have
+If so, they (may?) have
 \begin{equation}
-\lambda = \sum_{i,j} c_{ij}\, x^i\,m^j
+\lambda(x,y,m,n) = \sum_{i=0}^9\sum_{j=0}^9 c_{nij}\, x^i\,m^j + \mathrm{noise}
 \quad ,
 \end{equation}
-where the $c_{ij}$ are coefficients.
+where the $c_{nij}$ are coefficients unique to exposure $n$, and
+found for exposure $n$ without regard to any other exposure $n'$.
+Further, I think they may be finding the coefficients $c_{nij}$ that
+minimize an objective $Q$ that is something like the L2-norm:
+\begin{equation}
+Q = ||\lambda(x,y,m,n) - \sum_{i=0}^9\sum_{j=0}^9 c_{nij}\, x^i\,m^j||_2^2
+\quad .
+\end{equation}
+
+Even in this simple context, where every calibration image $n$ is
+treated as its own unique flower, I think there are improvements to be
+made.
+For one, the sums should not be from 0 to 9, but instead
+\begin{equation}
+\sum_{i=0}^9\sum_{j=0}^{9-i}
+\quad ,
+\end{equation}
+because that is the definition of 9th order.
+If I am right about this, the fit could be taken to 13th order to obtain
+much more expressiveness with (nearly) the same number of fit coefficients.
+For another, the objective function could be made soft to permit
+catastrophic outliers without destroying the fit.
+I would recommend the iteratively reweighted least squares (IRLS).
+This would make the fitting more robust.
+For yet another, I have ideas about rescaling the products $x^i\,m^j$ to
+protect the fitting from near-singularities or bad conditioning of the
+linear-algebra operators.
+
+Of course the main thing I want to do is go hierarchical!
+In this case, the calibration of every image is informed by the
+calibration of every other image.
+The simplest form of hierarchical model is to use the calibration data
+themselves to develop a low-dimensional basis for expressing the
+calibration data.
 
 If the space of all calibration possibilities is in fact
 $K$-dimensional (where I am thinking of this as being a small integer,
@@ -85,7 +118,7 @@ like $K=3$ or $K=8$ or thereabouts), and if the calibration variations are so
 small that we can linearize, then the function $f(x,y,m;\theta_{n})$ could
 be replaced with a tiny model
 \begin{equation}
-\lambda = g_0(x,y,m) + \sum_{k=1}^K a_{nk}\,g_k(x,y,m)
+\lambda(x,y,m,n) = g_0(x,y,m) + \sum_{k=1}^K a_{nk}\,g_k(x,y,m)
 \quad ,
 \end{equation}
 where
@@ -97,5 +130,8 @@ in calibration space that the spectrograph can depart from the
 fiducial calibration.
 The challenge is to learn these basis functions from the data, and get
 the $K$ amplitudes $a_{nk}$ for every exposure $n$.
+
+I know how to do this, but the margins here are too small to contain my
+beautiful ideas...
 
 \end{document}
