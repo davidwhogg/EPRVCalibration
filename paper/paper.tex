@@ -7,6 +7,7 @@
 \newcommand{\project}[1]{\textsl{#1}}
 \newcommand{\acronym}[1]{{\small{#1}}}
 \newcommand{\expres}{\project{\acronym{EXPRES}}}
+\newcommand{\name}{\project{NameOfThis}}
 
 % margins and page setup, etc
 \addtolength{\textheight}{1.00in}
@@ -15,7 +16,40 @@
 
 \begin{document}
 
-\section*{Method}
+\section*{\raggedright%
+\name:
+A non-parametric, hierarchical model for a laser-comb-calibrated spectrograph}
+
+\noindent
+\textbf{Lily~Zhao} (Yale) (Flatiron),
+\textbf{David~W~Hogg} (NYU) (MPIA) (Flatiron),
+\ldots and others\ldots
+
+\paragraph{Abstract:}
+There have been many hardware improvements in polygonal-fiber-fed,
+temperature-controlled, laser-frequency-comb or etalon-calibrated,
+high-resolution, extreme-precision radial-velocity spectrographs.
+Have the calibration methodologies improved to match?
+Here are three relevant observations:
+The first is that the calibration lines or spots from an etalon or
+comb fill the spectral range with dense calibration points.
+The second is that the spectrograph lives in a stabilized,
+climate-controlled environment, in which the full optical system and
+detectors will only vary within a tiny range of configurations or
+settings.
+The third is that---given this stability--- every calibration image
+ever taken is relevant to every science exposure ever taken; there is
+no reason to calibrate every exposure independently.
+The calibration methodology we propose here---\name---addresses these
+three problems by going non-parametric (no more polynomials) and then
+reducing dimensionality with a robust principal-component method.
+We demonstrate the success of this method with data from the
+\expres\ spectrograph.
+We find... [results and so on].
+
+\section{Introduction}
+
+\section{Method}
 
 The idea is that the wavelength solution is going to live in a
 low-dimensional space, where the degrees of freedom are set by the
