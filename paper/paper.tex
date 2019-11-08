@@ -133,6 +133,17 @@ the $K$ amplitudes $a_{nk}$ for every exposure $n$.
 
 ...
 
+\subsection{Choice Choices} \label{sec:choices}
+\begin{itemize}
+	\item Using scipy.interpolate.LSQUnivariateSpline to implement cubic spline between lines (fast and incorporates errors well; is chosen spline of the EXPRES pipeline) (and mostly isn't linear)
+	\item Interpolating each order individually
+	\item Wavelength solutions are delivered on a pixel grid of x and m
+	\item Eigenvector determination restricted to orders that are completely covered by LFC lines, and has enough signal to distinguish their peaks (orders 40-75 absolute)
+	\item Also restricted to pixels between 500 and 7000 out of 7920 for high signal
+	\item Using only exposures from after the replacement of the PCF in July 2019; gave rise to a large change in the nature of the instrument, but still gives us 4 months of data which exhibits non-negligible variation (this may have to be proven?)
+	\item Fitting wavelength as dependent variable?  (Should be line centers, right?)
+\end{itemize}
+
 \section{Discussion} \label{sec:discussion}
 
 Due to the dispersion intrinsic to echelle spectrographs, the wavelength change between pixels is greater at greater wavelengths.  This means that the function of wavelength given pixel across an order will necessarily be concave down everywhere.  Consequently, linear interpolation of this function will systematically give erroneously low values.
