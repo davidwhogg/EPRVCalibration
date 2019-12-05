@@ -3,12 +3,11 @@ import os
 from glob import glob
 import numpy as np
 from numpy.polynomial.polynomial import polyvander2d, polyval2d
+import pandas as pd
 import matplotlib.pyplot as plt
 from astropy.io import fits
 from astropy.constants import c
 from astropy.time import Time
-from scipy.optimize import curve_fit, least_squares
-from scipy.signal import argrelmin
 from scipy import interpolate
 from scipy.io import readsav
 from sklearn.decomposition import TruncatedSVD
@@ -224,36 +223,41 @@ def poly_train_and_predict(newx, newm, x, m, data, weights, deg):
 ###########################################################
 
 def interp_train_and_predict(newx, newm, x, m, data, e=None,
-                             orders=range(86), interp_deg='lsq', nknot=70):
+                             orders=range(86), interp_deg=3):
+    # Make all the searches match-able
+    newm = np.array(newm,dtype=int)
+    m = np.array(m,dtype=int)
+    orders = np.array(orders,dtype=int)
+    
     prediction = np.zeros_like(newx)
     prediction[:] = np.nan
     for r in orders:
         Inew = newm == r
         I = m==r
         if (np.sum(Inew)>0) and (np.sum(I)>0):
-            wave_sort = np.argsort(data[I])
-            assert np.all(np.diff(x[I][wave_sort]) > 0.),print(r)
+            ord_xs = x[I]
+            ord_data = data[I]
+            #assert np.all(np.diff(ord_xs) > 0.),print(r,np.diff(ord_xs).min())
         
             # Interpolate
             if interp_deg==1:
-                prediction[Inew] = np.interp(newx[Inew], x[I][wave_sort], data[I][wave_sort],
+                prediction[Inew] = np.interp(newx[Inew], ord_xs, ord_data,
                                              left=np.nan,right=np.nan)
             elif interp_deg=='lsq':
-                s = interpolate.UnivariateSpline(x[I][wave_sort],x[I][wave_sort],s=0)
+                s = interpolate.UnivariateSpline(ord_xs,ord_xs,s=0)
                 t = s.get_knots()[1:-1]
-                #t = np.linspace(min(x[I])+1,max(x[I])-1,nknot)
                 if e is not None:
-                    f = interpolate.LSQUnivariateSpline(x[I][wave_sort],data[I][wave_sort],
+                    f = interpolate.LSQUnivariateSpline(ord_xs,ord_data,
                                             t,w=1/e[I][wave_sort]**2)
                 else:
-                    f = interpolate.LSQUnivariateSpline(x[I][wave_sort],data[I][wave_sort],t)
+                    f = interpolate.LSQUnivariateSpline(ord_xs,ord_data,t)
                 prediction[Inew] = f(newx[Inew])
             elif interp_deg==3:
-                f = interpolate.interp1d(x[I][wave_sort], data[I][wave_sort],kind='cubic',
+                f = interpolate.interp1d(ord_xs, ord_data,kind='cubic',
                                      bounds_error=False,fill_value=np.nan)
                 prediction[Inew] = f(newx[Inew])
             else:
-                tck = interpolate.splrep(x[I][wave_sort], data[I][wave_sort], k=interp_deg)
+                tck = interpolate.splrep(ord_xs, ord_data, k=interp_deg)
                 prediction[Inew] = interpolate.splev(newx[Inew],tck,ext=0)
     return prediction
 
@@ -358,7 +362,7 @@ def wave2mode(waves):
     return np.array(modes).astype(int)
 
 def buildLineDB(file_list, order_list=range(45,76),
-              flatten=False, verbose=False):
+              flatten=True, verbose=False):
     """ 
     Find all observed modes in specified file list
     
@@ -366,10 +370,10 @@ def buildLineDB(file_list, order_list=range(45,76),
         and this will be simplified like a whole bunch
     """
     # Load in all observed modes into a big dictionary
-    name_keys = []
-    name_waves = []
+    name_dict = {}
+    wave_dict = {}
     
-    for file_name in file_list:
+    for file_name in tqdm(file_list):
         try:
             x,m,w,e = readFile(file_name)
         except ValueError as err:
@@ -378,18 +382,23 @@ def buildLineDB(file_list, order_list=range(45,76),
             continue
         for nord in order_list:
             I = m==nord # Mask for an order
-            # Get identifying names: "(nord, wavelength string)"
             n = [(nord,"{0:09.3f}".format(wave))for wave in w[I]]
-            # Add it to the list
-            name_keys.append(n)
-            name_waves.append(w[I])
-        all_files.append(file_name)
-    # Combine all added names and waves into one long list
+            if nord not in name_dict.keys():
+                name_dict[nord] = np.array(n,dtype=str)
+                wave_dict[nord] = np.array(w[I],dtype=float)
+                continue
+            # Get identifying names: "(nord, wavelength string)"
+            name_dict[nord], unq_indx = np.unique(np.concatenate([name_dict[nord],n]),
+                                                  return_index=True,axis=0)
+            wave_dict[nord] = np.concatenate([wave_dict[nord],w[I]])[unq_indx]
+    name_keys = []
+    name_waves = []
+    for nord in order_list:
+        # Combine all added names and waves into one long list
+        name_keys.append(name_dict[nord])
+        name_waves.append(wave_dict[nord])
     name_keys = np.concatenate(name_keys)
     name_waves = np.concatenate(name_waves)
-    # Find only the unique order/wavelength pairings
-    name_keys, unq_indx = np.unique(name_keys,axis=0,return_index=True)
-    name_waves = name_waves[unq_indx]
     
     if flatten:
         # Separate out names and orders
@@ -398,52 +407,40 @@ def buildLineDB(file_list, order_list=range(45,76),
     else:
         return name_keys, name_waves
 
-def getLineMeasures(file_list, all_keys):
+def getLineMeasures(file_list, orders, names):
     """
     Find line center (in pixels) to match order/mode lines
     """
     # Load in x values to match order/mode lines
-    x_values = np.empty((len(file_list),len(all_keys)))
+    x_values = np.empty((len(file_list),len(orders)))
     x_values[:] = np.nan # want default empty to be nan
     
+    pd_keys = pd.DataFrame({'orders':orders.copy().astype(int),
+                            'names':names.copy().astype(str)})
     for file_num in tqdm(range(len(file_list))):
         # Load in line fit information
         file_name = file_list[file_num]
         try:
             x,m,w,e = readFile(file_name)
+            m = m.astype(int)
         except ValueError:
             continue
         
         # Identify which lines this exposure has
-        exp_names = []
-        exp_xvals = []
-        for nord in np.unqiue(m):
+        for nord in np.unique(m)[6:]:
             I = m==nord # Mask for an order
             # Get identifying names: "(nord, wavelength string)"
-            n = [(nord,"{0:09.3f}".format(wave))for wave in w[I]]
-            # Add it to the list
-            exp_names.append(n)
-            exp_xvals.append(x[I])
-        exp_names = np.concatenate(exp_names)
-        unq_exp_names, 
-        if len(np.unique(exp_names)) < len(exp_names):
-            file_base_name = os.path.basename(file_name)
-            print(f'Lines identified twice in file {file_base_name}')
-            # Right now we do NOTHING about this
-            # The later instances will just over-write the earlier ones in x_values
-        exp_xvals = np.concatenate(exp_xvals)
-        
-        # Match lines in exposure to all_keys structure
-        for key_num, key_name in enumerate(exp_names):
-            if key_name in all_keys:
-                x_values[file_num,key_name==all_keys] = exp_xvals[key_num]
+            n = ["{0:09.3f}".format(wave) for wave in w[I]]
+            ord_dict = dict(zip(n,x[I]))
+            ord_xval = pd_keys[pd_keys.orders==nord].names.map(ord_dict).to_numpy()
+            x_values[file_num,pd_keys.orders==nord] = ord_xval
                 
     return x_values
 
 def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
-             running_window=9, num_iters=45, return_iters=False,
+             num_iters=45, return_iters=False, running_window=0,
              line_cutoff=0.5, file_cutoff=0.5, 
-             fast_pca=False, plot=False, verbose=False):
+             fast_pca=False,verbose=False):
     """
     Vet for bad lines/exposures
     Initial patch of bad data with running mean
@@ -465,13 +462,12 @@ def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
     # Find all observed lines in each order and their wavlengths
     if verbose:
         print('Finding all observed modes')
-    keys, waves = buildLineDB(file_list, order_list=order_range)
-    orders, names = keys.T
+    orders, names, waves = buildLineDB(file_list, order_list=order_range)
 
     # Find x-values of observed lines
     if verbose:
         print('Finding line center for each mode')
-    x_values = getLineMeasures(file_list, keys)
+    x_values = getLineMeasures(file_list, orders, names)
     
     
     ### Vetting
@@ -511,7 +507,20 @@ def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
     ### Patching
     # Initial patch of bad data with mean
     bad_mask = np.isnan(x_values) # mask to identify patched x_values
-    x_values[bad_mask] = np.nanmean(x_values,axis=0)
+    if running_window > 0:
+        bad_mask = np.isnan(x_values)
+        half_size = int(running_window//2)
+        for i in range(x_values.shape[0]):
+            # Identify files in window
+            file_range = [max((i-half_size,0)), min((i+half_size+1,x_values.shape[1]))]
+            # Find mean of non-NaN values
+            run_med = np.nanmean(x_values[file_range[0]:file_range[1],:],axis=0)
+            # Patch NaN values with mean for center file
+            x_values[i][bad_mask[i,:]] = run_med[bad_mask[i,:]]
+    else: # don't bother with running mean
+        mean_values = np.nanmean(x_values,axis=0)
+        mean_patch = np.array([mean_values for _ in range(x_values.shape[0])])
+        x_values[bad_mask] = mean_patch[bad_mask]
     
     # Iterative PCA
     if return_iters:
@@ -541,8 +550,8 @@ def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
             uu,ss,vv = np.linalg.svd(x_values-mean_x_values, full_matrices=False)
 
         # Repatch bad data with K PCA reconstruction
-        denoised_x_values = mean_x_values + np.dot((uu*ss)[:,:K],vv[:K])
-        x_values[bad_mask] = denoised_x_values[bad_mask]
+        denoised_xs = mean_x_values + np.dot((uu*ss)[:,:K],vv[:K])
+        x_values[bad_mask] = denoised_xs[bad_mask]
         
         if return_iters:
             # Populate array with information from this iteration
@@ -555,13 +564,13 @@ def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
     patch_dict['files']  = exp_list.copy()
     patch_dict['times']  = file_times.copy()
     # Line Information
-    patch_dict['modes']  = modes.copy()
+    patch_dict['names']  = names.copy()
     patch_dict['orders'] = orders.copy()
     patch_dict['waves']  = waves.copy()
     patch_dict['errors'] = None # Is there such a thing?
     # Line Measurement Information
     patch_dict['x_values'] = x_values.copy()
-    patch_dict['denoised_xs'] = denoised_x_values.copy()
+    patch_dict['denoised_xs'] = denoised_xs.copy()
     patch_dict['mean_xs']  = mean_x_values.copy()
     patch_dict['bad_mask'] = bad_mask.copy()
     # PCA information
@@ -576,27 +585,31 @@ def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
     
     return patch_dict
 
-def findWaveSol(new_times, patch_dict, t_inrp_deg=3):
+def evalWaveSol(new_times, patch_dict, t_intp_deg=3):
     """
     Interpolate eigen coefficients against time
     """
+    try:
+        len(new_times)
+    except TypeError:
+        new_times = [new_times]
     K  = patch_dict['K']
     vv = patch_dict['v']
     # Interpolate eigen coefficients
     new_ecs = np.empty((len(new_times),K),dtype=float)
     for i in range(K):
         # Interpolating one by one seems right, right?
-        if t_interp_deg==0:
+        if t_intp_deg==0:
             # Find nearest time for each time
             # IS THERE A WAY TO DO THIS NOT ONE BY ONE???
             for tidx, t in enumerate(new_times):
                 idx = np.abs(patch_dict[times]-t).argmin()
                 new_ecs[tidx,i] = patch_dict['ec'][idx,i]
             
-        elif t_interp_deg==1:
+        elif t_intp_deg==1:
             new_ecs[:,i] = np.interp(new_times,patch_dict['times'],patch_dict['ec'][:,i])
             
-        elif t_interp_deg==3: # Default
+        elif t_intp_deg==3: # Default
             f = interpolate.interp1d(patch_dict['times'],patch_dict['ec'][:,i],kind='cubic',
                                  bounds_error=False,fill_value=np.nan)
             new_ecs[:,i] = f(new_times)
@@ -606,6 +619,6 @@ def findWaveSol(new_times, patch_dict, t_inrp_deg=3):
             new_ecs[:,i] = interpolate.splev(new_times,tck)
             
     # Construct x values for that period of time
-    denoised_xs = np.dot(new_ecs,vv[:K]) + patch_dict['mean_x_values']
+    denoised_xs = np.dot(new_ecs,vv[:K]) + patch_dict['mean_xs']
     
     return denoised_xs
