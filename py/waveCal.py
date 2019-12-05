@@ -9,7 +9,7 @@ from astropy.constants import c
 from astropy.time import Time
 from scipy.optimize import curve_fit, least_squares
 from scipy.signal import argrelmin
-from scipy.interpolate import UnivariateSpline, interp1d, LSQUnivariateSpline, splrep, splev
+from scipy import interpolate
 from scipy.io import readsav
 from sklearn.decomposition import TruncatedSVD
 
@@ -49,7 +49,7 @@ def readParams(file_name):
     w = np.concatenate(waves)
     # Note: default of pipeline includes ThAr lines, which we're not including here
     
-    return (x,y,e,w)
+    return (x,y,w,e)
 
 def readThid(thid_file):
     # Extract information from a thid file
@@ -92,7 +92,7 @@ def readFile(file_name):
     if file_name.split('.')[-1] == 'thid':
         x,m,w = readThid(file_name)
         e = None
-        return x,m,e,w
+        return x,m,w,e
     else:
         return readParams(file_name)
 
@@ -224,24 +224,37 @@ def poly_train_and_predict(newx, newm, x, m, data, weights, deg):
 ###########################################################
 
 def interp_train_and_predict(newx, newm, x, m, data, e=None,
-                             orders=range(86), nknot=70):
+                             orders=range(86), interp_deg='lsq', nknot=70):
     prediction = np.zeros_like(newx)
+    prediction[:] = np.nan
     for r in orders:
         Inew = newm == r
         I = m==r
         if (np.sum(Inew)>0) and (np.sum(I)>0):
-            assert np.all(np.diff(x[I]) > 0.),print(r)
-            #prediction[Inew] = np.interp(newx[Inew], x[I], data[I],
-            #                             left=np.nan,right=np.nan)
-            #f = interp1d(x[I], data[I],kind='quadratic',bounds_error=False)
-            s = UnivariateSpline(x[I],x[I],s=0)
-            t = s.get_knots()[1:-1]
-            #t = np.linspace(min(x[I])+1,max(x[I])-1,nknot)
-            if e is not None:
-                f = LSQUnivariateSpline(x[I],data[I],t,w=1/e[I]**2)
+            wave_sort = np.argsort(data[I])
+            assert np.all(np.diff(x[I][wave_sort]) > 0.),print(r)
+        
+            # Interpolate
+            if interp_deg==1:
+                prediction[Inew] = np.interp(newx[Inew], x[I][wave_sort], data[I][wave_sort],
+                                             left=np.nan,right=np.nan)
+            elif interp_deg=='lsq':
+                s = interpolate.UnivariateSpline(x[I][wave_sort],x[I][wave_sort],s=0)
+                t = s.get_knots()[1:-1]
+                #t = np.linspace(min(x[I])+1,max(x[I])-1,nknot)
+                if e is not None:
+                    f = interpolate.LSQUnivariateSpline(x[I][wave_sort],data[I][wave_sort],
+                                            t,w=1/e[I][wave_sort]**2)
+                else:
+                    f = interpolate.LSQUnivariateSpline(x[I][wave_sort],data[I][wave_sort],t)
+                prediction[Inew] = f(newx[Inew])
+            elif interp_deg==3:
+                f = interpolate.interp1d(x[I][wave_sort], data[I][wave_sort],kind='cubic',
+                                     bounds_error=False,fill_value=np.nan)
+                prediction[Inew] = f(newx[Inew])
             else:
-                f = LSQUnivariateSpline(x[I],data[I],t)
-            prediction[Inew] = f(newx[Inew])
+                tck = interpolate.splrep(x[I][wave_sort], data[I][wave_sort], k=interp_deg)
+                prediction[Inew] = interpolate.splev(newx[Inew],tck,ext=0)
     return prediction
 
 ###########################################################
@@ -264,7 +277,7 @@ def mkMeanWave(file_list, x_range=(500,7000), m_range=(45,75),
     for i in range(len(file_list)):
         file_name = file_list[i]
         try:
-            x,m,e,w = readFile(file_name)
+            x,m,w,e = readFile(file_name)
             if len(e) < line_requirement:
                 # THIS LIMIT IS HARD CODED
                 # WHICH IS DUMB
@@ -344,7 +357,7 @@ def wave2mode(waves):
     modes = np.round((freq - lfc_offset) / rep_rate)
     return np.array(modes).astype(int)
 
-def findModes(file_list, order_list=range(42,76),
+def buildLineDB(file_list, order_list=range(45,76),
               flatten=False, verbose=False):
     """ 
     Find all observed modes in specified file list
@@ -353,68 +366,81 @@ def findModes(file_list, order_list=range(42,76),
         and this will be simplified like a whole bunch
     """
     # Load in all observed modes into a big dictionary
-    mode_dict = {}
+    name_keys = []
+    name_waves = []
     
     for file_name in file_list:
         try:
-            x,m,e,w = readFile(file_name)
+            x,m,w,e = readFile(file_name)
         except ValueError as err:
             if verbose:
                 print(f'{os.path.basename(file_name)} threw error: {err}')
             continue
         for nord in order_list:
-            n = wave2mode(w[m==nord])
-            if nord not in mode_dict.keys():
-                mode_dict[nord] = np.array([]).astype(int)
-            mode_dict[nord] = np.unique(np.concatenate([mode_dict[nord],n]))
+            I = m==nord # Mask for an order
+            # Get identifying names: "(nord, wavelength string)"
+            n = [(nord,"{0:09.3f}".format(wave))for wave in w[I]]
+            # Add it to the list
+            name_keys.append(n)
+            name_waves.append(w[I])
+        all_files.append(file_name)
+    # Combine all added names and waves into one long list
+    name_keys = np.concatenate(name_keys)
+    name_waves = np.concatenate(name_waves)
+    # Find only the unique order/wavelength pairings
+    name_keys, unq_indx = np.unique(name_keys,axis=0,return_index=True)
+    name_waves = name_waves[unq_indx]
     
     if flatten:
-        # Reformat mode dictionary into a flat vector
-        modes = np.array([]).astype(int)
-        orders = np.array([]).astype(int)
-        for m in mode_dict.keys():
-            modes = np.concatenate((modes, mode_dict[m]))
-            orders = np.concatenate((orders, (np.zeros_like(mode_dict[m])+m)))
-            
-        return modes, orders
-    
+        # Separate out names and orders
+        orders, names = name_keys.T
+        return orders, names, name_waves
     else:
-        return mode_dict
+        return name_keys, name_waves
 
-def mode2pixl(file_list, modes, orders, waves,
-              use_mode_number=True):
+def getLineMeasures(file_list, all_keys):
     """
     Find line center (in pixels) to match order/mode lines
     """
     # Load in x values to match order/mode lines
-    x_values = np.empty((len(file_list),len(modes)))
+    x_values = np.empty((len(file_list),len(all_keys)))
     x_values[:] = np.nan # want default empty to be nan
     
-    for i in tqdm(range(len(file_list))):
-        file_name = file_list[i]
+    for file_num in tqdm(range(len(file_list))):
+        # Load in line fit information
+        file_name = file_list[file_num]
         try:
-            x,m,e,w = readFile(file_name)
+            x,m,w,e = readFile(file_name)
         except ValueError:
             continue
-        for line in range(len(modes)):
-            I = m==orders[line] # Identify all lines in given order
-            try:
-                if use_mode_number: # We have LFC mode numbers to identify lines
-                    ord_modes = wave2mode(w[I])
-                    if modes[line] in ord_modes:
-                        x_values[i,line] = x[I][ord_modes==modes[line]]
-                else: # Identify lines by shared wavelength
-                    if waves[line] in w[I]:
-                        x_values[i,line] = x[I][w[I]==waves[line]] # hogg hates this line
-            except ValueError:
-                # Happens when a peak is mistakenly identified between LFC lines
-                # Means two peaks profess to have the same mode number
-                # Ignore since this will have to be fixed in line fitting stage
-                x_values[i,line] = np.nan
-    
+        
+        # Identify which lines this exposure has
+        exp_names = []
+        exp_xvals = []
+        for nord in np.unqiue(m):
+            I = m==nord # Mask for an order
+            # Get identifying names: "(nord, wavelength string)"
+            n = [(nord,"{0:09.3f}".format(wave))for wave in w[I]]
+            # Add it to the list
+            exp_names.append(n)
+            exp_xvals.append(x[I])
+        exp_names = np.concatenate(exp_names)
+        unq_exp_names, 
+        if len(np.unique(exp_names)) < len(exp_names):
+            file_base_name = os.path.basename(file_name)
+            print(f'Lines identified twice in file {file_base_name}')
+            # Right now we do NOTHING about this
+            # The later instances will just over-write the earlier ones in x_values
+        exp_xvals = np.concatenate(exp_xvals)
+        
+        # Match lines in exposure to all_keys structure
+        for key_num, key_name in enumerate(exp_names):
+            if key_name in all_keys:
+                x_values[file_num,key_name==all_keys] = exp_xvals[key_num]
+                
     return x_values
 
-def pcaPatch(file_list, file_times=None, order_range=range(45,76), K=2,
+def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
              running_window=9, num_iters=45, return_iters=False,
              line_cutoff=0.5, file_cutoff=0.5, 
              fast_pca=False, plot=False, verbose=False):
@@ -432,27 +458,30 @@ def pcaPatch(file_list, file_times=None, order_range=range(45,76), K=2,
     Idea is to make plots of what lines are missing
     (Scatter plots would take very long time, though)
     """
-    # Find all observed modes
+    if file_times is None:
+        file_times = np.zeros_like(file_list)
+    
+    ### Gather calibration information
+    # Find all observed lines in each order and their wavlengths
     if verbose:
         print('Finding all observed modes')
-    modes, orders = findModes(file_list, order_list=order_range, flatten=True)
+    keys, waves = buildLineDB(file_list, order_list=order_range)
+    orders, names = keys.T
 
-    # True Wavelengths
-    waves = mode2wave(modes)
-
-    # Find x-values of observed modes
+    # Find x-values of observed lines
     if verbose:
         print('Finding line center for each mode')
-    x_values = mode2pixl(file_list, modes, orders, waves)
-    if plot:
-        init_x_values = x_values.copy() # Save pre-vet for plotting
+    x_values = getLineMeasures(file_list, keys)
     
-    # Vetting
-    x_values[x_values < 1] = np.nan # Where there is no line information, this will thow a warning
+    
+    ### Vetting
+    # Find where there is no line information
+    x_values[x_values < 1] = np.nan # This will throw a warning
+    
     # Get rid of bad lines
     good_lines = np.mean(np.isnan(x_values),axis=0) < line_cutoff
     # Trim everything
-    modes  = modes[good_lines]
+    names  = names[good_lines]
     orders = orders[good_lines]
     waves  = waves[good_lines]
     x_values = x_values[:,good_lines]
@@ -478,45 +507,11 @@ def pcaPatch(file_list, file_times=None, order_range=range(45,76), K=2,
         print('Files that were cut:')
         print(file_list[~good_files])
     
-    if plot:
-        """ # I'm just not sure if any of this works yet
-        # But I am sure it's just not a priority
-        date = Time.now().isot.split('T')[0].replace('-','')[2:] # YYMMDD
-        for nord in order_range:
-            init_ord_mask = init_orders==nord
-            ord_mask = orders==nord
-
-            plt.figure()
-            plt.title(f'Order {nord}')
-            plt.xlabel('Mode Number')
-            plt.ylabel('Exposure Number-ish');
-            for f in range(len(ckpt_files)):
-                plt.plot(init_x_values[f][init_ord_mask],
-                         np.zeros_like(init_ord_mask,dtype=int)+f,'o',label='All Lines')
-                plt.plot(init_x_values[f][init_ord_mask][~good_lines[init_ord_mask]],
-                         np.zeros(np.sum(~good_lines),dtype=int)+f,'.',label='Vetted Lines')
-                plt.plot(init_x_values[f][init_ord_mask][good_lines][~good_files[init_ord_mask[good_lines]]],
-                         np.zeros(np.sum(~good_files),dtype=int)+f,'.',label='Vetted Files')
-                nan_mask = np.isnan(x_values[ord_mask])
-                plt.plot(x_values[ord_mask][nan_mask],
-                         np.zeros_like(nan_mask,dtype=int)+f,'r.',label='No Info.')
-                if f==0:
-                    plt.legend(loc=1)
-            plt.tight_layout()
-            plt.savefig(f'./Figures/{date}_ord{nord}Lines.png')
-            plt.close()
-        """
     
-    # Initial patch of bad data with running mean
-    bad_mask = np.isnan(x_values)
-    half_size = int(running_window//2)
-    for i in range(x_values.shape[0]):
-        # Identify files in window
-        file_range = [max((i-half_size,0)), min((i+half_size+1,x_values.shape[1]))]
-        # Find mean of non-NaN values
-        run_med = np.nanmean(x_values[file_range[0]:file_range[1],:],axis=0)
-        # Patch NaN values with mean for center file
-        x_values[i][bad_mask[i,:]] = run_med[bad_mask[i,:]]
+    ### Patching
+    # Initial patch of bad data with mean
+    bad_mask = np.isnan(x_values) # mask to identify patched x_values
+    x_values[bad_mask] = np.nanmean(x_values,axis=0)
     
     # Iterative PCA
     if return_iters:
@@ -531,6 +526,7 @@ def pcaPatch(file_list, file_times=None, order_range=range(45,76), K=2,
     K = int(K)
     
     for i in tqdm(range(num_iters)):
+        # There should be no more NaN values in x_values
         assert np.sum(np.isnan(x_values)) == 0
         # Redefine mean
         mean_x_values = np.mean(x_values,axis=0)
@@ -545,8 +541,8 @@ def pcaPatch(file_list, file_times=None, order_range=range(45,76), K=2,
             uu,ss,vv = np.linalg.svd(x_values-mean_x_values, full_matrices=False)
 
         # Repatch bad data with K PCA reconstruction
-        pca_patch = np.dot((uu*ss)[:,:K],vv[:K])
-        x_values[bad_mask] = (pca_patch+mean_x_values)[bad_mask]
+        denoised_x_values = mean_x_values + np.dot((uu*ss)[:,:K],vv[:K])
+        x_values[bad_mask] = denoised_x_values[bad_mask]
         
         if return_iters:
             # Populate array with information from this iteration
@@ -555,73 +551,61 @@ def pcaPatch(file_list, file_times=None, order_range=range(45,76), K=2,
     
     patch_dict = {}
     patch_dict['K'] = K
+    # Exposure Information
     patch_dict['files']  = exp_list.copy()
-    if file_times is not None:
-        patch_dict['times']  = file_times.copy()
+    patch_dict['times']  = file_times.copy()
+    # Line Information
     patch_dict['modes']  = modes.copy()
     patch_dict['orders'] = orders.copy()
     patch_dict['waves']  = waves.copy()
-    #patch_dict['errors'] ? Is there such a thing?
+    patch_dict['errors'] = None # Is there such a thing?
+    # Line Measurement Information
     patch_dict['x_values'] = x_values.copy()
-    patch_dict['mean_x_values']  = mean_x_values.copy()
+    patch_dict['denoised_xs'] = denoised_x_values.copy()
+    patch_dict['mean_xs']  = mean_x_values.copy()
     patch_dict['bad_mask'] = bad_mask.copy()
+    # PCA information
     patch_dict['u'] = uu.copy()
     patch_dict['s'] = ss.copy()
     patch_dict['v'] = vv.copy()
-    patch_dict['ec'] = (uu.dot(np.diag(ss)))
+    patch_dict['ec'] = (uu*ss)[:,:K]
+    # Information by Iteration
     if return_iters:
         patch_dict['iter_vs'] = iter_vvs
         patch_dict['iter_x_values'] = iter_x_values
     
     return patch_dict
 
-def interp_coefs_and_predict(new_time, patch_dict, interp_deg=1,
-                             new_x=None, new_m=None,
-                             x_range=(500,7000), m_range=(45,75)):
+def findWaveSol(new_times, patch_dict, t_inrp_deg=3):
     """
     Interpolate eigen coefficients against time
     """
     K  = patch_dict['K']
     vv = patch_dict['v']
     # Interpolate eigen coefficients
-    new_ec = np.empty(K,dtype=float)
+    new_ecs = np.empty((len(new_times),K),dtype=float)
     for i in range(K):
         # Interpolating one by one seems right, right?
-        if interp_deg==0:
-            # Find nearest time
-            idx = np.abs(patch_dict['times']-new_time).argmin()
-            new_ec[i] = patch_dict['ec'][idx,i]
-        elif interp_deg==1:
-            new_ec[i] = np.interp(new_time,patch_dict['times'],patch_dict['ec'][:,i])
+        if t_interp_deg==0:
+            # Find nearest time for each time
+            # IS THERE A WAY TO DO THIS NOT ONE BY ONE???
+            for tidx, t in enumerate(new_times):
+                idx = np.abs(patch_dict[times]-t).argmin()
+                new_ecs[tidx,i] = patch_dict['ec'][idx,i]
+            
+        elif t_interp_deg==1:
+            new_ecs[:,i] = np.interp(new_times,patch_dict['times'],patch_dict['ec'][:,i])
+            
+        elif t_interp_deg==3: # Default
+            f = interpolate.interp1d(patch_dict['times'],patch_dict['ec'][:,i],kind='cubic',
+                                 bounds_error=False,fill_value=np.nan)
+            new_ecs[:,i] = f(new_times)
+            
         else:
-            tck = splrep(patch_dict['times'],patch_dict['ec'][:,i],k=interp_deg)
-            new_ec[i] = splev(new_time,tck)
+            tck = interpolate.splrep(patch_dict['times'],patch_dict['ec'][:,i],k=t_interp_deg)
+            new_ecs[:,i] = interpolate.splev(new_times,tck)
             
     # Construct x values for that period of time
-    x = np.dot(new_ec,vv[:K]) + patch_dict['mean_x_values']
-    m = patch_dict['orders']
-    w = patch_dict['waves']
+    denoised_xs = np.dot(new_ecs,vv[:K]) + patch_dict['mean_x_values']
     
-    # Construct wavelength "grids"
-    if new_x is None or new_m is None: # use specified x ranges
-        x_range = np.arange(*x_range).astype(float)
-        m_range = np.arange(*m_range).astype(float)
-        x_grid, m_grid = np.meshgrid(x_range,m_range)
-        new_x = x_grid.flatten()
-        new_m = m_grid.flatten()
-    else: # use specific values provided
-        new_x = np.sort(new_x)
-        new_m = np.sort(new_m)
-    
-    if new_x[0] < min(x):
-        print('WARNING: Interpolation range in pixel direction lower than training set.')
-    if new_x[-1] > max(x):
-        print('WARNING: Interpolation range in pixel direction higher than training set.')
-    if new_m[0] < min(m):
-        print('WARNING: Interpolation range in order direction lower than training set.')
-    if new_m[-1] > max(m):
-        print('WARNING: Interpolation range in order direction higher than training set.')
-    
-    w_fit = interp_train_and_predict(new_x,new_m,x,m,w)
-
-    return w_fit
+    return denoised_xs
