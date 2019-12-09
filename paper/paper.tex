@@ -5,6 +5,8 @@
 \usepackage{xcolor}
 \newcommand{\lz}[1]{\textcolor{orange}{#1}}
 
+\usepackage[ruled,vlined]{algorithm2e}
+
 % typesetting words
 \newcommand{\project}[1]{\textsl{#1}}
 \newcommand{\acronym}[1]{{\small{#1}}}
@@ -91,56 +93,76 @@ We present results using data from EXPRES, the EXtreme PRecison Spectrograph.  E
 EXPRES exposures are separated into different ``instrumental epochs," which correspond to changes to the position of the echellogram on the detector, the shape of the instrumental PSF, or the calibration sources (\lz{(worth including table that explicitly defines epochs?)}).  Because significant instrumental changes break the assumption of only low-dimensional variations in the spectrograph hardware, we treat each instrument epoch independently.
 
 \subsection{Hierarchical De-Noising of Calibration Frames}
+% Gotta make this whole section more math-y
+% Add variable names for matrix of all lines and exposures, what defines a line, what defines a line measurement, fiducial calibration
 let ${exp_n}$ be the set of calibration exposures within an instrument epoch that will be used to construct the basis functions that characterize the potential change in calibration space of each exposure throughout that instrument epoch.  We first identify the full list of lines we can expect to find in a calibration image from this epoch by iterating through all ${exp_n}$ and constructing a list of all unique lines found in these exposures.  A line is uniquely defined by a combination of order, $m$, and ``true" wavelength value, $\lambda$.
 
-For each line, we then assign the fitted line center 
+For each line, we then find the fitted line center, in pixel space, for that line for each exposure.  If the line is missing from an exposure, we insert a NaN for the line center instead.  Lines that are missing from greater than some percent of exposures are cut.  Exposures that are missing greater than some percent of lines are also cut (\lz{This will miss low signal exposures that suffer most in the first few orders but can recover in later orders; can't decide if this is a feature or a bug}).  This threshold percentage is 50\% for LFC exposures and 30\% for ThAr exposures.
 
-figuring out which lines have measurements
+\lz{Discuss separating out sub-epochs due to echellogram shifts from focus motor position changes here if relevant}
 
-How is the data cleaned
-Find the lines that cover the range of wavelengths for each order
-identify where this line center is observed for each of the exposures
-Lines that are missing from greater than n percent of exposures are cut
-Exposures that are missing n percent of lines are cut \textcolor{red}{This will miss low signal exposures that suffer most in the first few orders but can recover in later orders; not sure if this is a feature or a bug}
-this n is 50 for LFCs and 30 for ThArs
-\lz{If we get to it, a discussion of what we do when we use both ThArs and LFCs to construct the PCA}
+Missing lines were replaced with denoised estimates using iterative PCA.  The line center of each missing line are initialized to the mean of the nearest 9 exposures in time.  We then find a fiducial calibration of the spectrograph, which is the mean line center value for each identified line.  We subtract this fiducial calibration from each exposure's measured line centers and run PCA on the difference between the measured and fiducial line center for each exposure.
 
-Defining generations (if we want to do sub generations?)
+Using the first K principal components, where K is some small integer like 2, and PCA weights, we reconstruct a de-noised matrix of line centers for each exposure.  Values from this reconstruction is then used to patch missing line centers.  This is done iteratively until the value of missing line centers being patched changes by less than 0.01\% of a pixel.  The last interpolation's principal components and coefficients are returned as well as the fiducial calibration and the de-noised matrix.
 
-Replacing values (patching)
-
-Summary
+\begin{algorithm}
+\SetAlgoLined
+\While{change in bad pixels $>$ 0.01\%}{
+	find fiducial calibration of the spectrograph\;
+	determine PCA of line matrix - fiducial calibration\;
+	reconstruct line matrix to order K\;
+	patch bad pixels with reconstructed line matrix
+	}
+\caption{Hierarchical De-Noising}
+\end{algorithm}
 
 \subsection{Non-Parametric Calibration}
-interpolate PCA coefficients over time to ``paint" a wavelength solution onto calibrations outside of the training set
+We can interpolate the returned PCA coefficients over time to determine the wavelength solution at any given time.  Using the interpolated PCA coefficients and the returned basis vectors, we can construct a de-noised set of line centers for that point in time.  We use a cubic spline to interpolate the PCA coefficients.
 
-Generate new line list for that time
+Once we have determined line centers for each line, which has an associated known wavelength, we can interpolate the known wavelengths over line centers to any pixel in a given order.  We can either interpolate onto every x pixel, and generate a complete wavelength solution for that order, or interpolate onto the measured line centers of a calibration image and compare the return wavelengths as a validation of our method.  This interpolation is also done using a cubic spline.
 
-Interpolate, order-by-order in x direction to fill in an exposure (either to all pixels, or to the line centers of other exposures)
-
-Summary
+\begin{algorithm}
+\SetAlgoLined
+Inputs: new time, new line centers, new orders\; %command not working for w/e reason
+interpolate PCA coefficients to new time\;
+reconstruct line matrix for that time\;
+\For{each order}{
+	identify the new line centers in that order using new orders\;
+	Interpolate the info from the line matrix to the new x values\;	
+	}
+\caption{Non-Parametric Wavelength Solution}
+\end{algorithm}
 
 \subsection{Choice Choices} \label{sec:choices}
-(Before or after results presented in validation test and ThAr sections)
+(Before or after results presented in validation test and ThAr sections?)
 \begin{itemize}
-	\item Using scipy.interpolate.LSQUnivariateSpline to implement cubic spline between lines (fast and incorporates errors well; is chosen spline of the EXPRES pipeline) (and mostly isn't linear)
-	\item Interpolating each order individually
-	\item Wavelength solutions are delivered on a pixel grid of x and m
-	\item Eigenvector determination restricted to orders that are completely covered by LFC lines, and has enough signal to distinguish their peaks (orders 40-75 absolute)
-	\item Also restricted to pixels between 500 and 7000 out of 7920 for high signal
-	\item Using only exposures from after the replacement of the PCF in July 2019; gave rise to a large change in the nature of the instrument, but still gives us 4 months of data which exhibits non-negligible variation (this may have to be proven?)
+	\item Value of K for denoising
+	\item Type of interpolation (cubic spline vs nearest neighbor or linear)
+	\item Interpolation order (interpolate time and x direction together?  Individually?  Which one first?)
 	\item Fitting wavelength as dependent variable?  (Should be line centers, right?)
 \end{itemize}
 
-Which K did we choose and why?
-
-Interpolation scheme (both together or individually and which first?)
-
-Order of interpolation
-
 Due to the dispersion intrinsic to echelle spectrographs, the wavelength change between pixels is greater at greater wavelengths.  This means that the function of wavelength given pixel across an order will necessarily be concave down everywhere.  Consequently, linear interpolation of this function will systematically give erroneously low values.
 
-\section{Validation Tests}
+\section{Results}
+\subsection{Self Tests}
+predict wavelengths for the returned denoised x values, should return identical values to machine error
+
+predict wavelengths for measured x values for an exposure included in the training set
+should return results as good as we can expect given error inherent in measuring line centers?
+isolated test of how well the interpolation of lines in the x-pixel-direction does
+
+\subsection{Training and Validation Tests}
+training with 90\% of calibration exposures in an instrumental epoch
+Using the results of that training to predict the wavelengths of the measured line centers in the 10\% of exposures left out
+Tests how well the interpolation of PCA coefficients does at constructing the line centers AND THEN how well the interpolation of lines in the x-pixel-direction does
+You can use results from self test to inform this test, \lz{or just difference the measured line centers for a more direct answer, which is something I should do}
+
+\subsection{Cross Tests}
+Using PCA trained with LFC to predict ThAr wavelengths
+Like training and validation test, but have to take into account the increased error in measuring ThAr line centers, I think
+
+\subsection{ThAr Stuff?  Or Include it in Previous Subsections?}
 
 \subsection{Comparison to Parametric Model}
 Right now in the \expres\ pipeline the $\theta_{n}$ comprises the
@@ -179,8 +201,8 @@ For yet another, there are rescaling issues for the products $x^i\,m^j$ to
 protect the fitting from near-singularities or bad conditioning of the
 linear-algebra operators.
 
+\subsection{Comparison to Non-Parametric, Non-Hierarchical Model}
 
-\section{ThAr Stuff}
 
 \section{Real Data Through to RVs}
 
