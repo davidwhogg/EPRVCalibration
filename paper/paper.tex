@@ -2,6 +2,8 @@
 % Copyright 2019 the authors. All rights reserved.
 
 \documentclass[12pt, letterpaper]{article}
+\usepackage{xcolor}
+\newcommand{\lz}[1]{\textcolor{orange}{#1}}
 
 % typesetting words
 \newcommand{\project}[1]{\textsl{#1}}
@@ -50,25 +52,97 @@ We find... [results and so on].
 \section{Introduction}
 
 \section{Method}
+We are operating on the core idea that the wavelength solution is living in a low-dimensional space, where the degrees of freedom are set by the limited degrees of freedom of the spectrograph hardware.
 
-The idea is that the wavelength solution is going to live in a
-low-dimensional space, where the degrees of freedom are set by the
-degrees of freedom of the spectrograph hardware.
-
-First, some definitions.
 The way we think about this is the following:
 Given an exposure $n$, and order $m$, there is a relationship between
-the two-dimensional $(x,y)$-position on the detector and the
+the two-dimensional $(x,m)$-position on the detector and the
 wavelength $\lambda$
 \begin{equation}
 \lambda(x,y,m,n) = f(x,y,m;\theta_{n})
 \quad ,
 \end{equation}
 where $\theta_{n}$ is a big blob of parameters for this exposure.
-This is not precisely how the \expres\ team thinks about the problem,
-but it isn't far off.
-For now we are going to ignore that fact, but what we say
-could be adapted to any \expres\ conventions.
+
+Taking into account the low-degree of variability a stabilized spectrograph strives for, the calibration of every image can be informed by the calibration of every other image.  To implement this hierarchical model, we use the calibration data themselves to develop a low-dimensional basis for expressing the calibration data.
+
+If the space of all calibration possibilities is in fact $K$-dimensional (where K is a small integer, i.e 2 or 8 or thereabouts thereabouts), and if the calibration variations are so
+small that we can linearize, then the function $f(x,y,m;\theta_{n})$ could
+be replaced with a tiny model
+\begin{equation}
+\lambda(x,y,m,n) = g_0(x,y,m) + \sum_{k=1}^K a_{nk}\,g_k(x,y,m)
+\quad ,
+\end{equation}
+where
+$g_0(x,y,m)$ is the fiducial or mean or standard calibration of the
+spectrograph,
+the $a_{nk}$ are scalar amplitudes,
+and the $g_k(x,y,m)$ are basis functions expressing the ``directions'' in calibration space that the spectrograph can depart from the
+fiducial calibration.
+The challenge is to learn these basis functions from the data, and get
+the $K$ amplitudes $a_{nk}$ for every exposure $n$.
+
+\subsection{Data}
+We present results using data from EXPRES, the EXtreme PRecison Spectrograph.  EXPRES is an envionmentally stabilized, fiber-fed, $R=137,000$, optical spectrograph (\lz{CJ and RB's papers}).  EXPRES has two different calibration sources, a ThAr lamp and a Menlo Systems laser frequency comb (LFC, e.g. \lz{Wilken+ 2012, Molaro+ 2013, Probst+ 2014, from RB's paper}).  ThAr exposures are taken at the beginning and end of each night.  LFC exposures are interspersed between science exposures every ~15 minutes.  
+(Discussion of number of orders covered or number of lines in LFC and/or ThAr?)
+
+\lz{Discussion of line fitting?  Though the current line fitting causes me recurring nightmares.  I should really take the time to look into at least the peak fitting more.}
+
+EXPRES exposures are separated into different ``instrumental epochs," which correspond to changes to the position of the echellogram on the detector, the shape of the instrumental PSF, or the calibration sources (\lz{(worth including table that explicitly defines epochs?)}).  Because significant instrumental changes break the assumption of only low-dimensional variations in the spectrograph hardware, we treat each instrument epoch independently.
+
+\subsection{Hierarchical De-Noising of Calibration Frames}
+let ${exp_n}$ be the set of calibration exposures within an instrument epoch that will be used to construct the basis functions that characterize the potential change in calibration space of each exposure throughout that instrument epoch.  We first identify the full list of lines we can expect to find in a calibration image from this epoch by iterating through all ${exp_n}$ and constructing a list of all unique lines found in these exposures.  A line is uniquely defined by a combination of order, $m$, and ``true" wavelength value, $\lambda$.
+
+For each line, we then assign the fitted line center 
+
+figuring out which lines have measurements
+
+How is the data cleaned
+Find the lines that cover the range of wavelengths for each order
+identify where this line center is observed for each of the exposures
+Lines that are missing from greater than n percent of exposures are cut
+Exposures that are missing n percent of lines are cut \textcolor{red}{This will miss low signal exposures that suffer most in the first few orders but can recover in later orders; not sure if this is a feature or a bug}
+this n is 50 for LFCs and 30 for ThArs
+\lz{If we get to it, a discussion of what we do when we use both ThArs and LFCs to construct the PCA}
+
+Defining generations (if we want to do sub generations?)
+
+Replacing values (patching)
+
+Summary
+
+\subsection{Non-Parametric Calibration}
+interpolate PCA coefficients over time to ``paint" a wavelength solution onto calibrations outside of the training set
+
+Generate new line list for that time
+
+Interpolate, order-by-order in x direction to fill in an exposure (either to all pixels, or to the line centers of other exposures)
+
+Summary
+
+\subsection{Choice Choices} \label{sec:choices}
+(Before or after results presented in validation test and ThAr sections)
+\begin{itemize}
+	\item Using scipy.interpolate.LSQUnivariateSpline to implement cubic spline between lines (fast and incorporates errors well; is chosen spline of the EXPRES pipeline) (and mostly isn't linear)
+	\item Interpolating each order individually
+	\item Wavelength solutions are delivered on a pixel grid of x and m
+	\item Eigenvector determination restricted to orders that are completely covered by LFC lines, and has enough signal to distinguish their peaks (orders 40-75 absolute)
+	\item Also restricted to pixels between 500 and 7000 out of 7920 for high signal
+	\item Using only exposures from after the replacement of the PCF in July 2019; gave rise to a large change in the nature of the instrument, but still gives us 4 months of data which exhibits non-negligible variation (this may have to be proven?)
+	\item Fitting wavelength as dependent variable?  (Should be line centers, right?)
+\end{itemize}
+
+Which K did we choose and why?
+
+Interpolation scheme (both together or individually and which first?)
+
+Order of interpolation
+
+Due to the dispersion intrinsic to echelle spectrographs, the wavelength change between pixels is greater at greater wavelengths.  This means that the function of wavelength given pixel across an order will necessarily be concave down everywhere.  Consequently, linear interpolation of this function will systematically give erroneously low values.
+
+\section{Validation Tests}
+
+\subsection{Comparison to Parametric Model}
 Right now in the \expres\ pipeline the $\theta_{n}$ comprises the
 amplitudes of some 9th-ish-order polynomial in $x$ and $n$, possibly
 ignoring $y$?
@@ -105,47 +179,11 @@ For yet another, there are rescaling issues for the products $x^i\,m^j$ to
 protect the fitting from near-singularities or bad conditioning of the
 linear-algebra operators.
 
-Of course the main thing we want to do is go hierarchical!
-In this case, the calibration of every image is informed by the
-calibration of every other image.
-The simplest form of hierarchical model is to use the calibration data
-themselves to develop a low-dimensional basis for expressing the
-calibration data.
 
-If the space of all calibration possibilities is in fact
-$K$-dimensional (where I am thinking of this as being a small integer,
-like $K=3$ or $K=8$ or thereabouts), and if the calibration variations are so
-small that we can linearize, then the function $f(x,y,m;\theta_{n})$ could
-be replaced with a tiny model
-\begin{equation}
-\lambda(x,y,m,n) = g_0(x,y,m) + \sum_{k=1}^K a_{nk}\,g_k(x,y,m)
-\quad ,
-\end{equation}
-where
-$g_0(x,y,m)$ is the fiducial or mean or standard calibration of the
-spectrograph,
-the $a_{nk}$ are scalar amplitudes,
-and the $g_k(x,y,m)$ are basis functions expressing the ``directions''
-in calibration space that the spectrograph can depart from the
-fiducial calibration.
-The challenge is to learn these basis functions from the data, and get
-the $K$ amplitudes $a_{nk}$ for every exposure $n$.
+\section{ThAr Stuff}
 
-...
-
-\subsection{Choice Choices} \label{sec:choices}
-\begin{itemize}
-	\item Using scipy.interpolate.LSQUnivariateSpline to implement cubic spline between lines (fast and incorporates errors well; is chosen spline of the EXPRES pipeline) (and mostly isn't linear)
-	\item Interpolating each order individually
-	\item Wavelength solutions are delivered on a pixel grid of x and m
-	\item Eigenvector determination restricted to orders that are completely covered by LFC lines, and has enough signal to distinguish their peaks (orders 40-75 absolute)
-	\item Also restricted to pixels between 500 and 7000 out of 7920 for high signal
-	\item Using only exposures from after the replacement of the PCF in July 2019; gave rise to a large change in the nature of the instrument, but still gives us 4 months of data which exhibits non-negligible variation (this may have to be proven?)
-	\item Fitting wavelength as dependent variable?  (Should be line centers, right?)
-\end{itemize}
+\section{Real Data Through to RVs}
 
 \section{Discussion} \label{sec:discussion}
-
-Due to the dispersion intrinsic to echelle spectrographs, the wavelength change between pixels is greater at greater wavelengths.  This means that the function of wavelength given pixel across an order will necessarily be concave down everywhere.  Consequently, linear interpolation of this function will systematically give erroneously low values.
 
 \end{document}
