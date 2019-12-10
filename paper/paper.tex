@@ -51,9 +51,14 @@ We demonstrate the success of this method with data from the
 \expres\ spectrograph.
 We find... [results and so on].
 
-\section{Introduction}
+\section{Introduction} 
 
-\section{Method}
+Why hierarchical?
+
+Why non-parametric?
+
+
+\section{Method} \label{sec:method}
 We are operating on the core idea that the wavelength solution is living in a low-dimensional space, where the degrees of freedom are set by the limited degrees of freedom of the spectrograph hardware.
 
 The way we think about this is the following:
@@ -84,15 +89,15 @@ fiducial calibration.
 The challenge is to learn these basis functions from the data, and get
 the $K$ amplitudes $a_{nk}$ for every exposure $n$.
 
-\subsection{Data}
-We present results using data from EXPRES, the EXtreme PRecison Spectrograph.  EXPRES is an envionmentally stabilized, fiber-fed, $R=137,000$, optical spectrograph (\lz{CJ and RB's papers}).  EXPRES has two different calibration sources, a ThAr lamp and a Menlo Systems laser frequency comb (LFC, e.g. \lz{Wilken+ 2012, Molaro+ 2013, Probst+ 2014, from RB's paper}).  ThAr exposures are taken at the beginning and end of each night.  LFC exposures are interspersed between science exposures every ~15 minutes.  
+\subsection{Data} \label{sec:data}
+We present results using data from \expres\, the EXtreme PRecison Spectrograph.  \expres\ is an envionmentally stabilized, fiber-fed, $R=137,000$, optical spectrograph (\lz{CJ and RB's papers}).  \expres\ has two different calibration sources, a ThAr lamp and a Menlo Systems laser frequency comb (LFC, e.g. \lz{Wilken+ 2012, Molaro+ 2013, Probst+ 2014, from RB's paper}).  ThAr exposures are taken at the beginning and end of each night.  LFC exposures are interspersed between science exposures every ~15 minutes.  
 (Discussion of number of orders covered or number of lines in LFC and/or ThAr?)
 
 \lz{Discussion of line fitting?  Though the current line fitting causes me recurring nightmares.  I should really take the time to look into at least the peak fitting more.}
 
-EXPRES exposures are separated into different ``instrumental epochs," which correspond to changes to the position of the echellogram on the detector, the shape of the instrumental PSF, or the calibration sources (\lz{(worth including table that explicitly defines epochs?)}).  Because significant instrumental changes break the assumption of only low-dimensional variations in the spectrograph hardware, we treat each instrument epoch independently.
+\expres\ exposures are separated into different ``instrumental epochs," which correspond to changes to the position of the echellogram on the detector, the shape of the instrumental PSF, or the calibration sources (\lz{(worth including table that explicitly defines epochs?)}).  Because significant instrumental changes break the assumption of only low-dimensional variations in the spectrograph hardware, we treat each instrument epoch independently.
 
-\subsection{Hierarchical De-Noising of Calibration Frames}
+\subsection{Hierarchical De-Noising of Calibration Frames} \label{sec:denoising}
 % Gotta make this whole section more math-y
 % Add variable names for matrix of all lines and exposures, what defines a line, what defines a line measurement, fiducial calibration
 let ${exp_n}$ be the set of calibration exposures within an instrument epoch that will be used to construct the basis functions that characterize the potential change in calibration space of each exposure throughout that instrument epoch.  We first identify the full list of lines we can expect to find in a calibration image from this epoch by iterating through all ${exp_n}$ and constructing a list of all unique lines found in these exposures.  A line is uniquely defined by a combination of order, $m$, and ``true" wavelength value, $\lambda$.
@@ -116,7 +121,7 @@ Using the first K principal components, where K is some small integer like 2, an
 \caption{Hierarchical De-Noising}
 \end{algorithm}
 
-\subsection{Non-Parametric Calibration}
+\subsection{Non-Parametric Calibration} \label{sec:nonparam}
 We can interpolate the returned PCA coefficients over time to determine the wavelength solution at any given time.  Using the interpolated PCA coefficients and the returned basis vectors, we can construct a de-noised set of line centers for that point in time.  We use a cubic spline to interpolate the PCA coefficients.
 
 Once we have determined line centers for each line, which has an associated known wavelength, we can interpolate the known wavelengths over line centers to any pixel in a given order.  We can either interpolate onto every x pixel, and generate a complete wavelength solution for that order, or interpolate onto the measured line centers of a calibration image and compare the return wavelengths as a validation of our method.  This interpolation is also done using a cubic spline.
@@ -144,28 +149,41 @@ reconstruct line matrix for that time\;
 
 Due to the dispersion intrinsic to echelle spectrographs, the wavelength change between pixels is greater at greater wavelengths.  This means that the function of wavelength given pixel across an order will necessarily be concave down everywhere.  Consequently, linear interpolation of this function will systematically give erroneously low values.
 
-\section{Results}
-\subsection{Self Tests}
-predict wavelengths for the returned denoised x values, should return identical values to machine error
 
-predict wavelengths for measured x values for an exposure included in the training set
-should return results as good as we can expect given error inherent in measuring line centers?
-isolated test of how well the interpolation of lines in the x-pixel-direction does
+\section{Results} \label{sec:results}
+\subsection{Self Tests} \label{sec:test-self}
+First, let's have a sanity check.  Using a cubic spline scheme with no smoothing to predict wavelengths for the returned, denoised line center values should return identical values to the assigned true wavelength for each line within machine error.
+We do see this, for both ThArs and LFCs: look at the figure.
 
-\subsection{Training and Validation Tests}
-training with 90\% of calibration exposures in an instrumental epoch
-Using the results of that training to predict the wavelengths of the measured line centers in the 10\% of exposures left out
-Tests how well the interpolation of PCA coefficients does at constructing the line centers AND THEN how well the interpolation of lines in the x-pixel-direction does
-You can use results from self test to inform this test, \lz{or just difference the measured line centers for a more direct answer, which is something I should do}
+As an only slightly less silly sanity check, we can also use the constructed PCA basis to predict wavelengths for the measured line centers for an exposure that was included in the set of exposures used to construct the basis.  This interpolation should return identical PCA coefficients for that time.  Differences in wavelengths will arise from a combination of 1) error inherent in measuring line centers and 2) interpolation error of lines to other x positions in the pixel direction.
 
-\subsection{Cross Tests}
-Using PCA trained with LFC to predict ThAr wavelengths
-Like training and validation test, but have to take into account the increased error in measuring ThAr line centers, I think
+Difference in denoised x-values to measured ones? (translate into rv shift?)
+median and spread in errors in pixel (like 0.006) and RV (like 3.2 m/s?)
+Histograms
 
-\subsection{ThAr Stuff?  Or Include it in Previous Subsections?}
+\subsection{Training and Validation Tests} \label{sec:test-trainNvalid}
+A better test is to leave out some percentage of the calibration images while constructing the basis and weights with PCA.  We can then use those basis and weights to predict wavelengths for the calibrations images that were left out and assess how accurate the predictions are.  We will call the used calibration images the ``training set," and the left out exposures the ``validation set."
+
+We chose to use 90\% of available exposures to train the PCA, and leave the remaining 10\% for validation.  Exposures were sorted into either set at random.  This test will finally incorporate testing how well PCA coefficients are interpolated to other times outside of the training set and therefore how well the line centers for each wavelength can be reconstructed at all times.  As before, differences in wavelength will also be drawn from how well line centers are measured and error in interpolating to those measured values.  This second source of error was independently quantified in the second test described in the previous section.
+
+LFC looks good, ThAr is struggling a bit
+Difference in denoised x-values to measured ones? (translate into rv shift?)
+median and spread in errors in pixel (like 0.006) and RV (like 3.2 m/s?)
+Histograms
+
+\subsection{Cross Tests} \label{sec:test-cross}
+Similar to the training and validation tests, we can also use one calibration source to construct the PCA basis and weights and the other to test the results.  For example, we can use LFC exposures to construct the wavelength solution, and then use it to predict wavelengths for measured line centers of ThAr wavelengths, which will have assigned true wavelengths.  Likewise, we can use ThAr exposures to predict the wavelengths of LFC lines.  Note that errors in this test will also draw on the difference in quality of the two calibration sources being compared.
+
+LFC predicts ThAr better than ThAr can predict itself.
+ThAr predicting LFC is really messing up somehow, and I should figure out what it is (sorry!)
+
+%\subsection{ThAr Stuff?  Or Include it in Previous Subsections?}
+
+\section{Comparisons to Other Methods} \label{sec:comparisons}
+Presumably we'll use the training/validation method to compare these?
 
 \subsection{Comparison to Parametric Model}
-Right now in the \expres\ pipeline the $\theta_{n}$ comprises the
+Previously, the \expres\ pipeline the $\theta_{n}$ comprises the
 amplitudes of some 9th-ish-order polynomial in $x$ and $n$, possibly
 ignoring $y$?
 If so, they (may?) have
@@ -204,7 +222,7 @@ linear-algebra operators.
 \subsection{Comparison to Non-Parametric, Non-Hierarchical Model}
 
 
-\section{Real Data Through to RVs}
+\section{Real Data Through to RVs} \label{sec:realdata}
 
 \section{Discussion} \label{sec:discussion}
 
