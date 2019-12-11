@@ -54,17 +54,18 @@ We find... [results and so on].
 
 \section{Introduction} 
 
-Why hierarchical?
-
 Why non-parametric?
+(because density of lines given by the LFC)
+
+Why hierarchical?
+(Because stability of new instruments)
 
 
 \section{Method} \label{sec:method}
-We are operating on the core idea that the wavelength solution is living in a low-dimensional space, where the degrees of freedom are set by the limited degrees of freedom of the spectrograph hardware.
+We operate on the core idea that the wavelength solution is living in a low-dimensional space, where the degrees of freedom are set by the limited degrees of freedom of the spectrograph hardware.
 
-The way we think about this is the following:
-Given an exposure $n$, and order $m$, there is a relationship between
-the two-dimensional $(x,m)$-position on the detector and the
+We will pose the problem in the following way.  Given an exposure $n$, and order $m$, there is a relationship between
+the two-dimensional $(x,y)$-position on the detector and the
 wavelength $\lambda$
 \begin{equation}
 \lambda(x,y,m,n) = f(x,y,m;\theta_{n})
@@ -72,9 +73,9 @@ wavelength $\lambda$
 \end{equation}
 where $\theta_{n}$ is a big blob of parameters for this exposure.
 
-Taking into account the low-degree of variability a stabilized spectrograph strives for, the calibration of every image can be informed by the calibration of every other image.  To implement this hierarchical model, we use the calibration data themselves to develop a low-dimensional basis for expressing the calibration data.
+A stabilized spectrograph should experience only low-degree variability, meaning the calibration of any image can be informed by the calibration of every other image.  To implement such a hierarchical model, we use the calibration data themselves to develop a low-dimensional basis for expressing the calibration data.
 
-If the space of all calibration possibilities is in fact $K$-dimensional (where K is a small integer, i.e 2 or 8 or thereabouts thereabouts), and if the calibration variations are so
+If the space of all calibration possibilities is in fact $K$-dimensional (where K is a small integer, i.e 2 or 8 or thereabouts), and if the calibration variations are so
 small that we can linearize, then the function $f(x,y,m;\theta_{n})$ could
 be replaced with a tiny model
 \begin{equation}
@@ -87,85 +88,92 @@ spectrograph,
 the $a_{nk}$ are scalar amplitudes,
 and the $g_k(x,y,m)$ are basis functions expressing the ``directions'' in calibration space that the spectrograph can depart from the
 fiducial calibration.
-The challenge is to learn these basis functions from the data, and get
+The challenge is to learn these basis functions from the data and get
 the $K$ amplitudes $a_{nk}$ for every exposure $n$.
 
 \subsection{Data} \label{sec:data}
-We present results using data from \expres\, the EXtreme PRecison Spectrograph.  \expres\ is an envionmentally stabilized, fiber-fed, $R=137,000$, optical spectrograph (\lz{CJ and RB's papers}).  \expres\ has two different calibration sources, a ThAr lamp and a Menlo Systems laser frequency comb (LFC, e.g. \lz{Wilken+ 2012, Molaro+ 2013, Probst+ 2014, from RB's paper}).  ThAr exposures are taken at the beginning and end of each night.  LFC exposures are interspersed between science exposures every ~15 minutes.  
+We present results using data from \expres\, the EXtreme PRecison Spectrograph.  \expres\ is an envionmentally stabilized, fiber-fed, $R=137,000$, optical spectrograph (\lz{CJ and RB's papers}).  \expres\ has two different wavelength calibration sources, a ThAr lamp and a Menlo Systems laser frequency comb (LFC, e.g. \lz{Wilken+ 2012, Molaro+ 2013, Probst+ 2014, from RB's paper}).  ThAr exposures are taken at the beginning and end of each night.  LFC exposures are interspersed between science exposures every ~15 minutes.  
 (Discussion of number of orders covered or number of lines in LFC and/or ThAr?)
 
 \lz{Discussion of line fitting?  Though the current line fitting causes me recurring nightmares.  I should really take the time to look into at least the peak fitting more.}
 
+For the results presented in this paper, we work with the 1D, optimally extracted data.  This removes the y-dependence from equations 1 and 2.
+
 \expres\ exposures are separated into different ``instrumental epochs," which correspond to changes to the position of the echellogram on the detector, the shape of the instrumental PSF, or the calibration sources (\lz{(worth including table that explicitly defines epochs?)}).  Because significant instrumental changes break the assumption of only low-dimensional variations in the spectrograph hardware, we treat each instrument epoch independently.
 
 \subsection{Hierarchical De-Noising of Calibration Frames} \label{sec:denoising}
-% Gotta make this whole section more math-y
-% Add variable names for matrix of all lines and exposures, what defines a line, what defines a line measurement, fiducial calibration
-let ${exp_n}$ be the set of calibration exposures within an instrument epoch that will be used to construct the basis functions that characterize the potential change in calibration space of each exposure throughout that instrument epoch.  We first identify the full list of lines we can expect to find in a calibration image from this epoch by iterating through all ${exp_n}$ and constructing a list of all unique lines found in these exposures.  A line is uniquely defined by a combination of order, $m$, and ``true" wavelength value, $\lambda$.
+Let $\{exp_n\}$ be the set of calibration exposures within an instrument epoch used to construct $g_k(x,y,m)$.  We first identify the full list of lines we can expect to find in a calibration image from this epoch.  A line is uniquely defined by a combination of order, $m$, and ``true" or theoretical wavelength of that line, $\lambda$.  Let $\{l_{m,\lambda}\}$ be the complete list of unique lines found in $\{exp_n\}$.
 
-For each line, we then find the fitted line center, in pixel space, for that line for each exposure.  If the line is missing from an exposure, we insert a NaN for the line center instead.  Lines that are missing from greater than some percent of exposures are cut.  Exposures that are missing greater than some percent of lines are also cut (\lz{This will miss low signal exposures that suffer most in the first few orders but can recover in later orders; can't decide if this is a feature or a bug}).  This threshold percentage is 50\% for LFC exposures and 30\% for ThAr exposures.
+For each line, $l_{m,\lambda}$, we then find the fitted line center, $x_{n,l}$, in pixel space, for that line for each exposure.  If this line is missing from an exposure (e.g. it was covered by noise or off the edge of its usual order), we insert a $NaN$ for that line center instead.
 
-\lz{Discuss separating out sub-epochs due to echellogram shifts from focus motor position changes here if relevant}
+Lines that are missing from greater than some percent of exposures are cut.  Exposures that are missing greater than some percent of lines are also cut (\lz{This will miss low signal exposures that suffer most in the first few orders but can recover in later orders; can't decide if this is a feature or a bug}).  This threshold percentage is 50\% for LFC exposures and 30\% for ThAr exposures.
 
-Missing lines were replaced with denoised estimates using iterative PCA.  The line center of each missing line are initialized to the mean of the nearest 9 exposures in time.  We then find a fiducial calibration of the spectrograph, which is the mean line center value for each identified line.  We subtract this fiducial calibration from each exposure's measured line centers and run PCA on the difference between the measured and fiducial line center for each exposure.
+Missing line center measurements are replaced with denoised estimates using iterative PCA.  For each missing line center measurement, we initialzie their value to the mean of the nearest $n$ exposures in time, where $n$ is typically 9 for LFC exposures and $15$ for ThAr.  We then find a fiducial calibration of the spectrograph,  $g_0(x,y,m)$, for which we use the mean line center value for each identified line.  We subtract this fiducial calibration from each exposure's measured line centers and run PCA on the difference between the measured and fiducial line center for each exposure.  This PCA gives us $a_{nk}$ and $g_k(x,y,m)$.
 
-Using the first K principal components, where K is some small integer like 2, and PCA weights, we reconstruct a de-noised matrix of line centers for each exposure.  Values from this reconstruction is then used to patch missing line centers.  This is done iteratively until the value of missing line centers being patched changes by less than 0.01\% of a pixel.  The last interpolation's principal components and coefficients are returned as well as the fiducial calibration and the de-noised matrix.
+Using those values with equation 2 and some small integer (e.g. 2) for K, we can reconstruct a de-noised matrix of line centers for each exposure.  Missing line center measurements are then replaced with values from this reconstruction.  We do this iteratively until the values of the missing line centers change by less than 0.01\% of a pixel.  This convergence suggests that the PCA is no longer being swayed by outliers and is truly ``de-noised."
 
 \begin{algorithm}
 \SetAlgoLined
+\textbf{Inputs}: \;
 \While{change in bad pixels $>$ 0.01\%}{
-	find fiducial calibration of the spectrograph\;
-	determine PCA of line matrix - fiducial calibration\;
-	reconstruct line matrix to order K\;
-	patch bad pixels with reconstructed line matrix
+	$g_0(x,y,m) = \overline{\{x_{n,l}\}}$\;
+	find $U, \Sigma, V$ s.t. $U\Sigma V^* = (x_{l,n}-g_0(x,y,m))$\;
+	let $a_{n,k} = U\cdot \Sigma$ and $V = g_k(x,y,m)$\;
+	$\lambda(x,y,m,n) = g_0(x,y,m) + \sum_{k=1}^K a_{nk}\,g_k(x,y,m)$ where $K=2$\;
+	$\{x_{n,l}\} = \lambda(x,y,m,n)$ where $\{x_{n,l}\}$ is $NaN$
 	}
 \caption{Hierarchical De-Noising}
 \end{algorithm}
 
 \subsection{Non-Parametric Calibration} \label{sec:nonparam}
-We can interpolate the returned PCA coefficients over time to determine the wavelength solution at any given time.  Using the interpolated PCA coefficients and the returned basis vectors, we can construct a de-noised set of line centers for that point in time.  We use a cubic spline to interpolate the PCA coefficients.
+We can interpolate $a_{nk}$ with respect to time to determine $\lambda(x,y,m,n)$ at any time.  Once we have the line center for each line, which has an associated known wavelength, we can interpolate the known wavelengths over line centers to any position in x in a given order.  For example, interpolating onto every integer x will generate wavelengths for each pixel in an order.
 
-Once we have determined line centers for each line, which has an associated known wavelength, we can interpolate the known wavelengths over line centers to any pixel in a given order.  We can either interpolate onto every x pixel, and generate a complete wavelength solution for that order, or interpolate onto the measured line centers of a calibration image and compare the return wavelengths as a validation of our method.  This interpolation is also done using a cubic spline.
+We chose to implement both interpolations with a cubic spline.  Interpolation of wavelengths over line centers is done order by order.
 
 \begin{algorithm}
 \SetAlgoLined
-Inputs: new time, new line centers, new orders\; %command not working for w/e reason
-interpolate PCA coefficients to new time\;
-reconstruct line matrix for that time\;
-\For{each order}{
-	identify the new line centers in that order using new orders\;
-	Interpolate the info from the line matrix to the new x values\;	
+\textbf{Inputs}: new time, new line centers, new orders\; %command not working for w/e reason
+Let $t_n$ be the time associated with exposure $n$\;
+let $t_n'$, $x_n'$, and $m_n'$ be the new time, line centers, and orders we want wavelengths for\;
+Let $a_{n,k}'$ be the interpolation of $a_{n,k}$ to time $t_n'$\;
+$\lambda(x,y,m,n)' = g_0(x,y,m) + \sum_{k=1}^K a_{nk}'\,g_k(x,y,m)$ where $K=2$\;
+\For{each unique $m_n'$}{
+	${l_n,m}$ from $\lambda(x,y,m,n)'$
+	interpolate ${l_n,m}$ onto $x_n'$\;
 	}
 \caption{Non-Parametric Wavelength Solution}
 \end{algorithm}
+\lz{What's fancy math symbol for interpolate?}
 
 \subsection{Choice Choices} \label{sec:choices}
 (Before or after results presented in validation test and ThAr sections?)
+
+We're still testing most of these (will use that as excuse to write this section later)
 \begin{itemize}
 	\item Value of K for denoising
 	\item Type of interpolation (cubic spline vs nearest neighbor or linear)
 	\item Interpolation order (interpolate time and x direction together?  Individually?  Which one first?)
-	\item Fitting wavelength as dependent variable?  (Should be line centers, right?)
 \end{itemize}
 
+Reason for not linear interpolation:
 Due to the dispersion intrinsic to echelle spectrographs, the wavelength change between pixels is greater at greater wavelengths.  This means that the function of wavelength given pixel across an order will necessarily be concave down everywhere.  Consequently, linear interpolation of this function will systematically give erroneously low values.
 
 
 \section{Results} \label{sec:results}
 \subsection{Self Tests} \label{sec:test-self}
-First, let's have a sanity check.  Using a cubic spline scheme with no smoothing to predict wavelengths for the returned, denoised line center values should return identical values to the assigned true wavelength for each line within machine error.
-We do see this, for both ThArs and LFCs: look at the figure.
+First, let's have a sanity check.  Using a cubic spline scheme with no smoothing to predict wavelengths for the returned, denoised line center values, $\lambda(x,y,m,n)$, should return identical values to the assigned true wavelength for each line within machine error.
+This is what happens, for both ThArs and LFCs: look at the figure.
 
-As an only slightly less silly sanity check, we can also use the constructed PCA basis to predict wavelengths for the measured line centers for an exposure that was included in the set of exposures used to construct the basis.  This interpolation should return identical PCA coefficients for that time.  Differences in wavelengths will arise from a combination of 1) error inherent in measuring line centers and 2) interpolation error of lines to other x positions in the pixel direction.
+As an only slightly less silly sanity check, we can also use the constructed PCA basis to predict wavelengths for the measured line centers of an exposure that was included in the set of exposures used to construct the basis.  This interpolation should return identical PCA coefficients for that time.  Differences in wavelengths will arise from a combination of 1) the error inherent in measuring line centers and 2) interpolation error of lines to other x positions in the pixel direction.
 
 Difference in denoised x-values to measured ones? (translate into rv shift?)
 median and spread in errors in pixel (like 0.006) and RV (like 3.2 m/s?)
 Histograms
 
 \subsection{Training and Validation Tests} \label{sec:test-trainNvalid}
-A better test is to leave out some percentage of the calibration images while constructing the basis and weights with PCA.  We can then use those basis and weights to predict wavelengths for the calibrations images that were left out and assess how accurate the predictions are.  We will call the used calibration images the ``training set," and the left out exposures the ``validation set."
+A better test is to leave out some percentage of the calibration images from $\{exp_n\}$ while constructing the basis and weights with PCA.  We can then use the results from that PCA to predict wavelengths for lines in the calibrations images that were left out.  We will call the used calibration images the ``training set," and the left out exposures the ``validation set."
 
-We chose to use 90\% of available exposures to train the PCA, and leave the remaining 10\% for validation.  Exposures were sorted into either set at random.  This test will finally incorporate testing how well PCA coefficients are interpolated to other times outside of the training set and therefore how well the line centers for each wavelength can be reconstructed at all times.  As before, differences in wavelength will also be drawn from how well line centers are measured and error in interpolating to those measured values.  This second source of error was independently quantified in the second test described in the previous section.
+We chose to use 90\% of available exposures to train the PCA, and leave the remaining 10\% for validation.  Exposures were sorted into either set at random.  This will test how well PCA coefficients are interpolated to other times outside of the training set and therefore how well line centers can be reconstructed at all times.  As before, differences in wavelength will also be drawn from how well line centers are measured and error in interpolating to those measured values.  This second source of error was independently quantified in the second test described in the previous section.
 
 LFC looks good, ThAr is struggling a bit
 Difference in denoised x-values to measured ones? (translate into rv shift?)
@@ -173,7 +181,7 @@ median and spread in errors in pixel (like 0.006) and RV (like 3.2 m/s?)
 Histograms
 
 \subsection{Cross Tests} \label{sec:test-cross}
-Similar to the training and validation tests, we can also use one calibration source to construct the PCA basis and weights and the other to test the results.  For example, we can use LFC exposures to construct the wavelength solution, and then use it to predict wavelengths for measured line centers of ThAr wavelengths, which will have assigned true wavelengths.  Likewise, we can use ThAr exposures to predict the wavelengths of LFC lines.  Note that errors in this test will also draw on the difference in quality of the two calibration sources being compared.
+Similar to the training and validation tests, we can also use one calibration source to construct the PCA basis and weights and the other to test the results.  For example, we can use LFC exposures to construct the wavelength solution, and then use it to predict wavelengths for measured line centers of ThAr lines, which will have their own assigned true wavelengths.  Likewise, we can use ThAr exposures to predict the wavelengths of LFC lines.  Note that errors in this test will also draw on the difference in quality of the two calibration sources being compared.
 
 LFC predicts ThAr better than ThAr can predict itself.
 ThAr predicting LFC is really messing up somehow, and I should figure out what it is (sorry!)
@@ -181,20 +189,18 @@ ThAr predicting LFC is really messing up somehow, and I should figure out what i
 %\subsection{ThAr Stuff?  Or Include it in Previous Subsections?}
 
 \section{Comparisons to Other Methods} \label{sec:comparisons}
-Presumably we'll use the training/validation method to compare these?
+I think we probably have to use the even/odd method to compare.
 
 \subsection{Comparison to Parametric Model}
-Previously, the \expres\ pipeline the $\theta_{n}$ comprises the
-amplitudes of some 9th-ish-order polynomial in $x$ and $n$, possibly
-ignoring $y$?
-If so, they (may?) have
+Previously, the \expres\ pipeline the $\theta_{n}$ from equation 1 comprises the
+amplitudes of some 9th-ish-order polynomial in $x$ and $m$ for each $n$.
+If so, they have
 \begin{equation}
 \lambda(x,y,m,n) = \sum_{i=0}^9\sum_{j=0}^9 c_{nij}\, x^i\,m^j + \mathrm{noise}
 \quad ,
 \end{equation}
-where the $c_{nij}$ are coefficients unique to exposure $n$, and
-found for exposure $n$ without regard to any other exposure $n'$.
-Further, they may be finding the coefficients $c_{nij}$ that
+where the $c_{nij}$ are coefficients unique to exposure $n$ but smoothed by a third order polynomial over time.
+Further, they were finding the coefficients $c_{nij}$ that
 minimize an objective $Q$ that is something like the L2-norm:
 \begin{equation}
 Q = ||\lambda(x,y,m,n) - \sum_{i=0}^9\sum_{j=0}^9 c_{nij}\, x^i\,m^j||_2^2
@@ -209,11 +215,9 @@ For one, the sums should not be from 0 to 9, but instead
 \sum_{i=0}^9\sum_{j=0}^{9-i}
 \quad ,
 \end{equation}
-because that is the definition of 9th order.
-If we are right about this, the fit could be taken to 13th order to obtain
-much more expressiveness with (nearly) the same number of fit coefficients.
+because that is the definition of 9th order.  We find that fitting to 8th order is sufficient, faster, and leaves less residual pattern than the original 9th degree fit.
 For another, the objective function could be made soft to permit
-catastrophic outliers without destroying the fit.
+catastrophic outliers without destroying the fit. (\lz{we did not do this})
 We might recommend the iteratively reweighted least squares (IRLS).
 This would make the fitting more robust.
 For yet another, there are rescaling issues for the products $x^i\,m^j$ to
@@ -247,5 +251,8 @@ linear-algebra operators.
 \section{Real Data Through to RVs} \label{sec:realdata}
 
 \section{Discussion} \label{sec:discussion}
+Generalization to etalon
+
+Maybe some practical statements?  How many exposures are needed to implement this method at all.  How often do exposures have to be taken throughout a night (unless that's too dependent on instrument stability)
 
 \end{document}
