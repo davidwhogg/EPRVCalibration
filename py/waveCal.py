@@ -1,6 +1,5 @@
 # Collection of all wavelength related functions so far
 import os
-from glob import glob
 import numpy as np
 from numpy.polynomial.polynomial import polyvander2d, polyval2d
 import pandas as pd
@@ -90,7 +89,8 @@ def readFile(file_name):
     """
     if file_name.split('.')[-1] == 'thid':
         x,m,w = readThid(file_name)
-        e = None
+        e = np.empty_like(x)
+        e[:] = np.nan
         return x,m,w,e
     else:
         return readParams(file_name)
@@ -103,15 +103,15 @@ def sortFiles(file_list,get_mjd=False):
     for i in range(len(file_list)):
         file_times[i] = os.path.basename(file_list[i]).split('_')[-1][:-cut]
     file_list = np.array(file_list)[np.argsort(file_times)]
-    
+
     if get_mjd: # Find MJD of each exposure from header
         for i, file_name in enumerate(file_list):
             hdus = fits.open(file_name)
             file_times[i] = Time(hdus[0].header['MIDPOINT'],format='isot').mjd
             hdus.close()
-        
+
         return file_list, file_times
-    
+
     else: # Just return sorted list of files
         return file_list
 
@@ -235,9 +235,10 @@ def interp_train_and_predict(newx, newm, x, m, data, e=None,
         Inew = newm == r
         I = m==r
         if (np.sum(Inew)>0) and (np.sum(I)>0):
-            ord_xs = x[I]
-            ord_data = data[I]
-            #assert np.all(np.diff(ord_xs) > 0.),print(r,np.diff(ord_xs).min())
+            wave_sort = np.argsort(data[I])
+            ord_xs = x[I][wave_sort]
+            ord_data = data[I][wave_sort]
+            assert np.all(np.diff(ord_xs) > 0.),print(r,np.diff(ord_xs).min())
         
             # Interpolate
             if interp_deg==1:
@@ -414,6 +415,8 @@ def getLineMeasures(file_list, orders, names):
     # Load in x values to match order/mode lines
     x_values = np.empty((len(file_list),len(orders)))
     x_values[:] = np.nan # want default empty to be nan
+    x_errors = np.empty((len(file_list),len(orders)))
+    x_errors[:] = np.nan
     
     pd_keys = pd.DataFrame({'orders':orders.copy().astype(int),
                             'names':names.copy().astype(str)})
@@ -431,11 +434,14 @@ def getLineMeasures(file_list, orders, names):
             I = m==nord # Mask for an order
             # Get identifying names: "(nord, wavelength string)"
             n = ["{0:09.3f}".format(wave) for wave in w[I]]
-            ord_dict = dict(zip(n,x[I]))
-            ord_xval = pd_keys[pd_keys.orders==nord].names.map(ord_dict).to_numpy()
+            xvl_dict = dict(zip(n,x[I]))
+            err_dict = dict(zip(n,e[I]))
+            ord_xval = pd_keys[pd_keys.orders==nord].names.map(xvl_dict).to_numpy()
+            ord_errs = pd_keys[pd_keys.orders==nord].names.map(err_dict).to_numpy()
             x_values[file_num,pd_keys.orders==nord] = ord_xval
+            x_errors[file_num,pd_keys.orders==nord] = ord_errs
                 
-    return x_values
+    return x_values, x_errors
 
 def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
              num_iters=45, return_iters=False, running_window=0,
@@ -467,7 +473,7 @@ def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
     # Find x-values of observed lines
     if verbose:
         print('Finding line center for each mode')
-    x_values = getLineMeasures(file_list, orders, names)
+    x_values, x_errors = getLineMeasures(file_list, orders, names)
     
     
     ### Vetting
@@ -481,6 +487,7 @@ def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
     orders = orders[good_lines]
     waves  = waves[good_lines]
     x_values = x_values[:,good_lines]
+    x_errors = x_errors[:,good_lines]
     if verbose:
         num_good = np.sum(good_lines)
         num_total = good_lines.size
@@ -492,6 +499,7 @@ def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
     good_files = np.mean(np.isnan(x_values),axis=1) < file_cutoff
     # Trim everything
     x_values = x_values[good_files]
+    x_errors = x_errors[good_files]
     exp_list = file_list[good_files]
     file_times = file_times[good_files]
     if verbose:
@@ -508,7 +516,6 @@ def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
     # Initial patch of bad data with mean
     bad_mask = np.isnan(x_values) # mask to identify patched x_values
     if running_window > 0:
-        bad_mask = np.isnan(x_values)
         half_size = int(running_window//2)
         for i in range(x_values.shape[0]):
             # Identify files in window
@@ -517,6 +524,19 @@ def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
             run_med = np.nanmean(x_values[file_range[0]:file_range[1],:],axis=0)
             # Patch NaN values with mean for center file
             x_values[i][bad_mask[i,:]] = run_med[bad_mask[i,:]]
+        counter = 5
+        while np.sum(np.isnan(x_values)) > 0:
+            for i in range(x_values.shape[0]):
+                # Identify files in window
+                file_range = [max((i-half_size,0)), min((i+half_size+1,x_values.shape[1]))]
+                # Find mean of non-NaN values
+                run_med = np.nanmean(x_values[file_range[0]:file_range[1],:],axis=0)
+                # Patch NaN values with mean for center file
+                x_values[i][bad_mask[i,:]] = run_med[bad_mask[i,:]]
+            counter -= 1
+            if counter < 0:
+                break
+        print(counter)
     else: # don't bother with running mean
         mean_values = np.nanmean(x_values,axis=0)
         mean_patch = np.array([mean_values for _ in range(x_values.shape[0])])
@@ -536,7 +556,7 @@ def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
     
     for i in tqdm(range(num_iters)):
         # There should be no more NaN values in x_values
-        assert np.sum(np.isnan(x_values)) == 0
+        assert np.sum(np.isnan(x_values)) == 0, print('Perhaps try a larger running_window?')
         # Redefine mean
         mean_x_values = np.mean(x_values,axis=0)
         
@@ -570,6 +590,7 @@ def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
     patch_dict['errors'] = None # Is there such a thing?
     # Line Measurement Information
     patch_dict['x_values'] = x_values.copy()
+    patch_dict['x_errors'] = x_errors.copy()
     patch_dict['denoised_xs'] = denoised_xs.copy()
     patch_dict['mean_xs']  = mean_x_values.copy()
     patch_dict['bad_mask'] = bad_mask.copy()
@@ -603,7 +624,7 @@ def evalWaveSol(new_times, patch_dict, t_intp_deg=3):
             # Find nearest time for each time
             # IS THERE A WAY TO DO THIS NOT ONE BY ONE???
             for tidx, t in enumerate(new_times):
-                idx = np.abs(patch_dict[times]-t).argmin()
+                idx = np.abs(patch_dict['times']-t).argmin()
                 new_ecs[tidx,i] = patch_dict['ec'][idx,i]
             
         elif t_intp_deg==1:
