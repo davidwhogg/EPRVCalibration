@@ -1,6 +1,10 @@
 % This document is part of the EPRVCalibration project
 % Copyright 2019 the authors. All rights reserved.
 
+% style notes
+% -----------
+% - use \acronym and use \eprv, \lfc, and so on.
+
 \documentclass[12pt, letterpaper]{article}
 \usepackage{xcolor}
 \newcommand{\lz}[1]{\textcolor{orange}{#1}}
@@ -13,6 +17,11 @@
 \newcommand{\acronym}[1]{{\small{#1}}}
 \newcommand{\expres}{\project{\acronym{EXPRES}}}
 \newcommand{\name}{\project{NameOfThis}}
+\newcommand{\eprv}{\acronym{EPRV}}
+\newcommand{\lfc}{\acronym{LFC}}
+
+% math shih
+\newcommand{\mps}{\mathrm{m\,s^{-1}}}
 
 % margins and page setup, etc
 \addtolength{\textheight}{1.00in}
@@ -23,7 +32,7 @@
 
 \section*{\raggedright%
 \name:
-A non-parametric, hierarchical model for a laser-comb-calibrated spectrograph}
+A non-parametric, hierarchical model for a precision spectrograph}
 
 \noindent
 \textbf{Lily~Zhao} (Yale) (Flatiron),
@@ -37,12 +46,12 @@ high-resolution, extreme-precision radial-velocity spectrographs.
 Have the calibration methodologies improved to match?
 Here are three relevant observations:
 The first is that the calibration lines or spots from an etalon or
-comb fill the spectral range with dense calibration points.
+comb (or even arc lamp) fill the spectral range with dense calibration points.
 The second is that the spectrograph lives in a stabilized,
 climate-controlled environment, in which the full optical system and
 detectors will only vary within a tiny range of configurations or
 settings.
-The third is that---given this stability--- every calibration image
+The third is that, given this stability, every calibration image
 ever taken is relevant to every science exposure ever taken; there is
 no reason to calibrate every exposure independently.
 The calibration methodology we propose here---\name---addresses these
@@ -54,12 +63,43 @@ We find... [results and so on].
 
 \section{Introduction} 
 
-Why non-parametric?
-(because density of lines given by the LFC)
+Extreme precision radial-velocity (\eprv) programs have been
+outrageously successful in finding and characterizing extra-solar
+planets (CITE THINGS).
+These programs typically make use of spectrographs with resolutions on
+the order of $10^5$, which correspond to line widths on the order of
+$3000\,\mps$.
+Exoplanet science happens at $3\,\mps$ precisions, and the current
+instruments hope to get to $0.1\,\mps$ precisions (CITE THINGS).
+This means that new spectrographs are expected to be calibrated or
+stabilized to better than $10^{-4}$ of a pixel (assuming that the
+spectrograph is well sampled).
+And indeed, some hardware--software systems seem to be reaching these
+levels (CITE THINGS).
 
-Why hierarchical?
-(Because stability of new instruments)
+Here we propose to simplify and improve calibration programs for
+\eprv\ hardware systems with two very simple but novel ideas.
+The first flows from the observation that calibration sources---which
+include lamps, etalons, and laser-frequency combs (\lfc
+s)---illuminate the spectrograph with dense sets of lines; almost every
+location in the spectrograph image plane is surrounded by nearby,
+useful calibration lines.
+This recommends a calibration methodology that is
+\emph{non-parametric}:
+If every point in the spectrograph detector is surrounded by nearby
+calibration lines, the wavelength solution can be made simply an
+interpolation of the calibration data.
+There is no need to choose any functional form for the wavelength
+solution, such as an eighth-order polynomial.
+Going non-parametric will improve calibration accuracy, because
+choosing a parametric form biases the calibration, and biases it
+badly when the form is inappropriate.
 
+The second idea here flows from the observation that contemporary
+\eprv\ instruments are incredibly stable.
+Temperature-controlled, fiber-fed pectrographs vary only slightly over
+the night or season, and only along a small number of axes in what you
+might call ``calibration space''..... HOGG
 
 \section{Method} \label{sec:method}
 We operate on the core idea that the wavelength solution is living in a low-dimensional space, where the degrees of freedom are set by the limited degrees of freedom of the spectrograph hardware.
@@ -251,8 +291,13 @@ linear-algebra operators.
 \section{Real Data Through to RVs} \label{sec:realdata}
 
 \section{Discussion} \label{sec:discussion}
+
 Generalization to etalon
 
 Maybe some practical statements?  How many exposures are needed to implement this method at all.  How often do exposures have to be taken throughout a night (unless that's too dependent on instrument stability)
+
+Some ideas about self-calibration. Once you know the space in which the
+spectrograph lives, every single science frame gives you information about
+where you are in that space; you don't need to look at the \lfc.
 
 \end{document}
