@@ -659,6 +659,7 @@ def patchAndDenoise(file_list, file_times=None, K=2,
     patch_dict['denoised_xs'] = denoised_xs.copy()
     patch_dict['mean_xs']  = mean_x_values.copy()
     patch_dict['bad_mask'] = bad_mask.copy()
+    # PCA Information
     patch_dict['u'] = uu.copy()
     patch_dict['s'] = ss.copy()
     patch_dict['v'] = vv.copy()
