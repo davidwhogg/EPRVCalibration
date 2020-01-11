@@ -167,6 +167,9 @@ fiducial calibration.
 The challenge is to learn these basis functions from the data and get
 the $K$ amplitudes $a_{nk}$ for every exposure $n$.
 
+HOGG: Say that there are many ways to do this, but we use PCA for now.
+Note that PCA is correct in the limit that everything is very high in SNR.
+
 \subsection{Data} \label{sec:data}
 We present results using data from \expres\, the EXtreme PRecison Spectrograph.  \expres\ is an envionmentally stabilized, fiber-fed, $R=137,000$, optical spectrograph (\lz{CJ and RB's papers}).  \expres\ has two different wavelength calibration sources, a ThAr lamp and a Menlo Systems laser frequency comb (LFC, e.g. \lz{Wilken+ 2012, Molaro+ 2013, Probst+ 2014, from RB's paper}).  ThAr exposures are taken at the beginning and end of each night.  LFC exposures are interspersed between science exposures every ~15 minutes.  
 (Discussion of number of orders covered or number of lines in LFC and/or ThAr?)
