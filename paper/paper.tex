@@ -128,18 +128,19 @@ wavelength solution to match or adapt to any instrument or detector
 oddities.
 By being hierarchical, it restricts that freedom tremendously, but it
 does so appropriately for the observed variations in the
-spectrography.
+spectrograph.
 \name\ is designed for temperature-controlled, bench-mounted, fiber-fed
 spectrographs with good calibration sources, such as laser-frequency
 combs, etalons, or good arc lamps.
 We have in mind the \eprv\ instruments and \eprv\ science cases.
 But we expect \name\ to have applications for other kinds of
-spectrographs in other contexts.
+spectrographs in other contexts; the motivating ideas behind this
+project are true for almost every astronomical spectrograph.
 
 \section{Method} \label{sec:method}
-We operate on the core idea that the wavelength solution is living in a low-dimensional space, where the degrees of freedom are set by the limited degrees of freedom of the spectrograph hardware.
+We operate on the two core ideas that the wavelength solution should be given enormous flexibility, but that in fact it will be living in a very low-dimensional space, where the degrees of freedom are set by the limited kinematics of the spectrograph hardware.
 
-We will pose the problem in the following way.  Given an exposure $n$, and order $m$, there is a relationship between
+HOGG: THIS IS NOW ALL WRONG... We will pose the problem in the following way.  Given an exposure $n$, and order $m$, there is a relationship between
 the two-dimensional $(x,y)$-position on the detector and the
 wavelength $\lambda$
 \begin{equation}
