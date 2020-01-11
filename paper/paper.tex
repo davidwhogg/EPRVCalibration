@@ -90,7 +90,7 @@ If every point in the spectrograph detector is surrounded by nearby
 calibration lines, the wavelength solution can be made simply an
 interpolation of the calibration data.
 There is no need to choose any functional form for the wavelength
-solution, such as an eighth-order polynomial.
+solution (such as an eighth-order polynomial, for example).
 Going non-parametric will improve calibration accuracy, because
 choosing a parametric form biases the calibration, and biases it
 badly when the form is inappropriate (as, for example, polynomials
@@ -100,12 +100,41 @@ The second idea here flows from the observation that contemporary
 \eprv\ instruments are incredibly stable.
 Temperature-controlled, fiber-fed pectrographs vary only slightly over
 the night or season, and only along a small number of axes in what you
-might call ``calibration space''..... HOGG
+might call ``calibration space'', or the (very high dimensional) space
+of all possible wavelength solutions.
+That is, not only are they stable, but they don't have many accessible
+degrees of freedom.
+So it is not appropriate to fit each calibration exposure or calibrate
+each science exposure independently.
+It makes sense to use the calibration data (or all the data) to
+determine the space in which the instrument can and does vary, and
+then in subsequent calibration work only permit the solution to live
+in the accessible part of calibration space.
+This structure is \emph{hierarchical}: The calibration data are used
+not just to determine the wavlength solution, but also to determine
+the possible space of wavelength solutions.
+In the statistics literature this concept is often described as
+\emph{de-noising}:
+Every calibration exposure contains information about every other
+exposure; it doesn't just constrain the instrument locally in time.
+Thus every exposure can be improved (de-noised) with information
+coming from every other exposure.
 
-HOGG: Return to the point that non-parametric \emph{increases} the
-freedom of the model (infinitely in some sense) but hierarchical
-\emph{restricts} the freedom of the model (enormously, but we hope
-appropriately).... HOGG
+The method we propose here---\name---embodies these ideas.
+It is a non-parametric, hierarchical, data-driven model for the
+wavelength solution.
+By being non-parametric, it delivers enormous freedom to the
+wavelength solution to match or adapt to any instrument or detector
+oddities.
+By being hierarchical, it restricts that freedom tremendously, but it
+does so appropriately for the observed variations in the
+spectrography.
+\name\ is designed for temperature-controlled, bench-mounted, fiber-fed
+spectrographs with good calibration sources, such as laser-frequency
+combs, etalons, or good arc lamps.
+We have in mind the \eprv\ instruments and \eprv\ science cases.
+But we expect \name\ to have applications for other kinds of
+spectrographs in other contexts.
 
 \section{Method} \label{sec:method}
 We operate on the core idea that the wavelength solution is living in a low-dimensional space, where the degrees of freedom are set by the limited degrees of freedom of the spectrograph hardware.
