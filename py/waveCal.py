@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from astropy.io import fits
 from astropy.constants import c
 from astropy.time import Time
-from scipy import interpolate
+from scipy import interpolate, optimize
 from scipy.io import readsav
 from sklearn.decomposition import TruncatedSVD
 
@@ -32,6 +32,7 @@ def readParams(file_name):
     """
     info = np.load(file_name,allow_pickle=True)[()]
     # Assemble information into "fit-able" form
+    num_orders = len(info['params'])
     lines = [p[:,1] for p in info['params'] if p is not None]
     errs = [np.sqrt(cov[:,1,1]) for cov in info['cov'] if cov is not None]
     ordrs = [o for o in np.arange(86) if info['params'][o] is not None]
@@ -243,23 +244,33 @@ def interp_train_and_predict(newx, newm, x, m, data, e=None,
             # Interpolate
             if interp_deg==1:
                 prediction[Inew] = np.interp(newx[Inew], ord_xs, ord_data,
-                                             left=np.nan,right=np.nan)
-            elif interp_deg=='lsq':
-                s = interpolate.UnivariateSpline(ord_xs,ord_xs,s=0)
-                t = s.get_knots()[1:-1]
-                if e is not None:
-                    f = interpolate.LSQUnivariateSpline(ord_xs,ord_data,
-                                            t,w=1/e[I][wave_sort]**2)
-                else:
-                    f = interpolate.LSQUnivariateSpline(ord_xs,ord_data,t)
+                                             left=np.nan,right=np.nan,k=interp_deg)
+            elif interp_deg == 'pchip':
+                f = interpolate.PchipInterpolator(ord_xs,ord_data,extrapolate=False)
                 prediction[Inew] = f(newx[Inew])
-            elif interp_deg==3:
-                f = interpolate.interp1d(ord_xs, ord_data,kind='cubic',
-                                     bounds_error=False,fill_value=np.nan)
-                prediction[Inew] = f(newx[Inew])
+            elif interp_deg == 'inverse':
+                f = interpolate.interp1d(ord_data, ord_xs, kind='cubic',
+                                         bounds_error=False,fill_value=0)
+                inv_f = lambda x, a: f(x)-a
+                
+                f0 = interpolate.UnivariateSpline(ord_xs,ord_data,ext=1)
+                
+                predict = np.zeros(np.sum(Inew),dtype=float)
+                for i,pix in enumerate(newx[Inew]):
+                    if (pix <= ord_xs.min()) or (pix >= ord_xs.max()): # No extrapolation
+                        predict[i] = np.nan
+                    else:
+                        try:
+                            x0 = f0(pix)
+                            predict[i] = optimize.newton(inv_f,x0,args=(pix,))
+                        except RuntimeError:
+                            predict[i] = np.nan
+                prediction[Inew] = predict
             else:
                 tck = interpolate.splrep(ord_xs, ord_data, k=interp_deg)
-                prediction[Inew] = interpolate.splev(newx[Inew],tck,ext=0)
+                predict = interpolate.splev(newx[Inew],tck,ext=1)
+                predict[predict==0] = np.nan
+                prediction[Inew] = predict
     return prediction
 
 ###########################################################
@@ -362,8 +373,7 @@ def wave2mode(waves):
     modes = np.round((freq - lfc_offset) / rep_rate)
     return np.array(modes).astype(int)
 
-def buildLineDB(file_list, order_list=range(45,76),
-              flatten=True, verbose=False):
+def buildLineDB(file_list, flatten=True, verbose=False):
     """ 
     Find all observed modes in specified file list
     
@@ -373,15 +383,18 @@ def buildLineDB(file_list, order_list=range(45,76),
     # Load in all observed modes into a big dictionary
     name_dict = {}
     wave_dict = {}
+    order_list = []
     
     for file_name in tqdm(file_list):
         try:
             x,m,w,e = readFile(file_name)
+            m = m.astype(int)
         except ValueError as err:
             if verbose:
                 print(f'{os.path.basename(file_name)} threw error: {err}')
             continue
-        for nord in order_list:
+        orders = np.unique(m)
+        for nord in orders:
             I = m==nord # Mask for an order
             n = [(nord,"{0:09.3f}".format(wave))for wave in w[I]]
             if nord not in name_dict.keys():
@@ -392,6 +405,7 @@ def buildLineDB(file_list, order_list=range(45,76),
             name_dict[nord], unq_indx = np.unique(np.concatenate([name_dict[nord],n]),
                                                   return_index=True,axis=0)
             wave_dict[nord] = np.concatenate([wave_dict[nord],w[I]])[unq_indx]
+        order_list = np.unique(np.concatenate([order_list,orders])).astype(int)
     name_keys = []
     name_waves = []
     for nord in order_list:
@@ -404,7 +418,7 @@ def buildLineDB(file_list, order_list=range(45,76),
     if flatten:
         # Separate out names and orders
         orders, names = name_keys.T
-        return orders, names, name_waves
+        return orders.astype(int), names, name_waves
     else:
         return name_keys, name_waves
 
@@ -443,9 +457,51 @@ def getLineMeasures(file_list, orders, names):
                 
     return x_values, x_errors
 
-def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
-             num_iters=45, return_iters=False, running_window=0,
-             line_cutoff=0.5, file_cutoff=0.5, 
+def pcaPatch(x_values, mask, K=2, num_iters=50,
+             fast_pca=False, return_iters=False):
+    """
+    Iterative PCA patching
+    """
+    K = int(K)
+    if return_iters:
+        # Initialize arrays to store info from each iteration
+        iter_x_values = np.zeros((num_iters,*x_values.shape))
+        if fast_pca:
+            iter_vvs = np.zeros((num_iters,K,x_values.shape[1]))
+        else:
+            iter_vvs = np.zeros((num_iters,*x_values.shape))
+    
+    for i in tqdm(range(num_iters)):
+        # There should be no more NaN values in x_values
+        assert np.sum(np.isnan(x_values)) == 0
+        # Redefine mean
+        mean_x_values = np.mean(x_values,axis=0)
+        
+        # Run PCA
+        if fast_pca:
+            svd = TruncatedSVD(n_components=K, n_iter=7, random_state=42)
+            uu = svd.fit_transform(x_values - mean_x_values)
+            ss = svd.singular_values_
+            vv = svd.components_
+        else:
+            uu,ss,vv = np.linalg.svd(x_values-mean_x_values, full_matrices=False)
+
+        # Repatch bad data with K PCA reconstruction
+        denoised_xs = mean_x_values + np.dot((uu*ss)[:,:K],vv[:K])
+        x_values[mask] = denoised_xs[mask]
+        
+        if return_iters:
+            # Populate array with information from this iteration
+            iter_vvs[i] = vv.copy()
+            iter_x_values[i] = x_values.copy()
+    if return_iters:
+        return x_values, mean_x_values, denoised_xs, uu, ss, vv, iter_vvs, iter_x_values
+    else:
+        return x_values, mean_x_values, denoised_xs, uu, ss, vv
+
+def patchAndDenoise(file_list, file_times=None, K=2,
+             num_iters=50, return_iters=False, running_window=0,
+             line_cutoff=0.5, file_cutoff=0.5, outlier_cut=0,
              fast_pca=False,verbose=False):
     """
     Vet for bad lines/exposures
@@ -456,6 +512,7 @@ def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
     file_times : mjd time each file was observed (for interpolation later)
     line_cutoff: required fraction of files to have a line
     file_cutoff: required fraction of lines a file must have
+    outlier_cut: for finding line centers that are off, 0 then don't do anything
     
     plot: NOT YET IMPLEMENTED
     Idea is to make plots of what lines are missing
@@ -468,7 +525,7 @@ def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
     # Find all observed lines in each order and their wavlengths
     if verbose:
         print('Finding all observed modes')
-    orders, names, waves = buildLineDB(file_list, order_list=order_range)
+    orders, names, waves = buildLineDB(file_list)
 
     # Find x-values of observed lines
     if verbose:
@@ -480,6 +537,25 @@ def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
     # Find where there is no line information
     x_values[x_values < 1] = np.nan # This will throw a warning
     
+    # Mask out of order lines
+    out_of_order = np.zeros_like(x_values,dtype=bool)
+    for m in np.unique(orders):
+        I = orders==m
+        wave_sort = np.argsort(waves[I])
+        for i, exp in enumerate(x_values):
+            exp_sort = exp[I][wave_sort]
+            exp_diff = np.diff(exp_sort)
+            left_diff = np.insert(exp_diff<0,0,False)
+            right_diff = np.append(exp_diff<0,False)
+            exp_mask = np.logical_or(left_diff,right_diff)
+            out_of_order[i,I] = exp_mask.copy()
+    x_values[out_of_order] = np.nan
+    if verbose:
+        num_bad = np.sum(out_of_order)
+        num_total = out_of_order.size
+        print('{:.3}% of lines masked'.format(
+             (num_bad)/num_total*100))
+            
     # Get rid of bad lines
     good_lines = np.mean(np.isnan(x_values),axis=0) < line_cutoff
     # Trim everything
@@ -511,7 +587,6 @@ def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
         print('Files that were cut:')
         print(file_list[~good_files])
     
-    
     ### Patching
     # Initial patch of bad data with mean
     bad_mask = np.isnan(x_values) # mask to identify patched x_values
@@ -535,48 +610,38 @@ def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
                 x_values[i][bad_mask[i,:]] = run_med[bad_mask[i,:]]
             counter -= 1
             if counter < 0:
+                print("Persistant NaNs with running mean.")
+                print("Replacing remaining NaNs with global mean.")
+                tot_mean = np.nanmean(x_values,axis=0)[None,...]*np.ones_like(x_values)
+                x_values[np.isnan(x_values)] = tot_mean[np.isnan(x_values)]
                 break
-        print(counter)
     else: # don't bother with running mean
         mean_values = np.nanmean(x_values,axis=0)
         mean_patch = np.array([mean_values for _ in range(x_values.shape[0])])
         x_values[bad_mask] = mean_patch[bad_mask]
     
     # Iterative PCA
-    if return_iters:
-        # Initialize arrays to store info from each iteration
-        iter_x_values = np.zeros((num_iters,*x_values.shape))
-        if fast_pca:
-            iter_vvs = np.zeros((num_iters,K,x_values.shape[1]))
-        else:
-            iter_vvs = np.zeros((num_iters,*x_values.shape))
+    pca_results = pcaPatch(x_values, bad_mask, K=K, num_iters=num_iters,
+                           fast_pca=fast_pca, return_iters=return_iters)
+    x_values, mean_x_values, denoised_xs, uu, ss, vv = pca_results[:6]
     
-    # Dimension of PCA reconstruction
-    K = int(K)
+    # Mask line center outliers
+    if outlier_cut > 0:
+        x_resids  = x_values-denoised_xs
+        out_mask  = abs(x_resids-np.mean(x_resids)) > (outlier_cut*np.nanstd(x_resids))
+        if verbose:
+            num_out = np.sum(out_mask)
+            num_total = out_mask.size
+            num_bad = np.sum(np.logical_and(out_mask,bad_mask))
+            print('{:.3}% of lines marked as Outliers'.format(
+                 (num_out)/num_total*100))
+            print('{:.3}% of lines marked as Outliers that were PCA Patched'.format(
+                 (num_bad)/num_total*100))
+        pca_results = pcaPatch(x_values, np.logical_or(bad_mask,out_mask),
+                               K=K, num_iters=num_iters,
+                               fast_pca=fast_pca, return_iters=return_iters)
+        x_values, mean_x_values, denoised_xs, uu, ss, vv = pca_results[:6]
     
-    for i in tqdm(range(num_iters)):
-        # There should be no more NaN values in x_values
-        assert np.sum(np.isnan(x_values)) == 0, print('Perhaps try a larger running_window?')
-        # Redefine mean
-        mean_x_values = np.mean(x_values,axis=0)
-        
-        # Run PCA
-        if fast_pca:
-            svd = TruncatedSVD(n_components=K, n_iter=7, random_state=42)
-            uu = svd.fit_transform(x_values - mean_x_values)
-            ss = svd.singular_values_
-            vv = svd.components_
-        else:
-            uu,ss,vv = np.linalg.svd(x_values-mean_x_values, full_matrices=False)
-
-        # Repatch bad data with K PCA reconstruction
-        denoised_xs = mean_x_values + np.dot((uu*ss)[:,:K],vv[:K])
-        x_values[bad_mask] = denoised_xs[bad_mask]
-        
-        if return_iters:
-            # Populate array with information from this iteration
-            iter_vvs[i] = vv.copy()
-            iter_x_values[i] = x_values.copy()
     
     patch_dict = {}
     patch_dict['K'] = K
@@ -594,19 +659,22 @@ def patchAndDenoise(file_list, file_times=None, order_range=range(45,76), K=2,
     patch_dict['denoised_xs'] = denoised_xs.copy()
     patch_dict['mean_xs']  = mean_x_values.copy()
     patch_dict['bad_mask'] = bad_mask.copy()
-    # PCA information
+    # PCA Information
     patch_dict['u'] = uu.copy()
     patch_dict['s'] = ss.copy()
     patch_dict['v'] = vv.copy()
     patch_dict['ec'] = (uu*ss)[:,:K]
     # Information by Iteration
     if return_iters:
-        patch_dict['iter_vs'] = iter_vvs
-        patch_dict['iter_x_values'] = iter_x_values
+        patch_dict['iter_vs'] = pca_results[6].copy()
+        patch_dict['iter_x_values'] = pca_results[7].copy()
+    # Outlier Information
+    if outlier_cut > 0:
+        patch_dict['out_mask'] = out_mask.copy()
     
     return patch_dict
 
-def evalWaveSol(new_times, patch_dict, t_intp_deg=3):
+def evalWaveSol(new_times, patch_dict, t_intp_deg=1):
     """
     Interpolate eigen coefficients against time
     """
