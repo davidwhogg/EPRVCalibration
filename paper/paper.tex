@@ -187,7 +187,7 @@ For each line, $l_{m,\lambda}$, we then find the fitted line center, $x_{n,l}$, 
 
 Lines that are missing from greater than some percent of exposures are cut.  Exposures that are missing greater than some percent of lines are also cut (\lz{This will miss low signal exposures that suffer most in the first few orders but can recover in later orders; can't decide if this is a feature or a bug}).  This threshold percentage is 50\% for LFC exposures and 30\% for ThAr exposures.
 
-Missing line center measurements are replaced with denoised estimates using iterative PCA.  For each missing line center measurement, we initialzie their value to the mean of the nearest $n$ exposures in time, where $n$ is typically 9 for LFC exposures and $15$ for ThAr.  We then find a fiducial calibration of the spectrograph,  $g_0(x,y,m)$, for which we use the mean line center value for each identified line.  We subtract this fiducial calibration from each exposure's measured line centers and run PCA on the difference between the measured and fiducial line center for each exposure.  This PCA gives us $a_{nk}$ and $g_k(x,y,m)$.
+Missing line center measurements are replaced with denoised estimates using iterative PCA.  For each missing line center measurement, we initialzie their value to the mean of the nearest $n$ exposures in time, where $n$ is typically $9$ exposuresr.  We then find a fiducial calibration of the spectrograph,  $g_0(x,y,m)$, for which we use the mean line center value for each identified line.  We subtract this fiducial calibration from each exposure's measured line centers and run PCA on the difference between the measured and fiducial line center for each exposure.  This PCA gives us $a_{nk}$ and $g_k(x,y,m)$.
 
 Using those values with equation 2 and some small integer (e.g. 2) for K, we can reconstruct a de-noised matrix of line centers for each exposure.  Missing line center measurements are then replaced with values from this reconstruction.  We do this iteratively until the values of the missing line centers change by less than 0.01\% of a pixel.  This convergence suggests that the PCA is no longer being swayed by outliers and is truly ``de-noised."
 
@@ -205,9 +205,17 @@ Using those values with equation 2 and some small integer (e.g. 2) for K, we can
 \end{algorithm}
 
 \subsection{Non-Parametric Calibration} \label{sec:nonparam}
-We can interpolate $a_{nk}$ with respect to time to determine $\lambda(x,y,m,n)$ at any time.  Once we have the line center for each line, which has an associated known wavelength, we can interpolate the known wavelengths over line centers to any position in x in a given order.  For example, interpolating onto every integer x will generate wavelengths for each pixel in an order.
+We can interpolate $a_{nk}$ with respect to time to determine $\lambda(x,y,m,n)$ at any time.  Once we have the line center for each line, which has an associated, known wavelength, we can interpolate the known wavelengths over line centers to any position in x in a given order.  For example, interpolating onto every integer x will generate wavelengths for each pixel in an order.
 
-We chose to implement both interpolations with a cubic spline.  Interpolation of wavelengths over line centers is done order by order.
+We implement with respect to time using a linear spline, which is sufficient to capture the linear variations we see over a night (see \ref{fig:nightlyVariation}).  Interpolation of wavelengths over live centers is done order by order using a Piecewise Cubic Hermite Interpolating Polynomial (PCHIP) interpolator.  This interpolation incorporates the flexibility needed to model the changing dispersion of the spectrograph across an order while also enforcing monotonicity.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.1\textwidth]{Figures/fruit.jpg}
+\caption{Show amplitudes of principal components w.r.t. time to show  that a linear interpolation is reasonable.  Should be a close up of one night or multiple nights (b/c the larger structure does not make it seem like a linear interpolation is a good idea.}
+\label{fig:nightlyVariation}
+\end{figure} 
+
 
 \begin{algorithm}
 \SetAlgoLined
@@ -225,47 +233,85 @@ $\lambda(x,y,m,n)' = g_0(x,y,m) + \sum_{k=1}^K a_{nk}'\,g_k(x,y,m)$ where $K=2$\
 \lz{What's fancy math symbol for interpolate?}
 
 \subsection{Choice Choices} \label{sec:choices}
-(Before or after results presented in validation test and ThAr sections?)
+(Can use results of training/validation or cross-tests to argue for different tests?  Or should we go all the way through to RVs.
 
-We're still testing most of these (will use that as excuse to write this section later)
-\begin{itemize}
-	\item Value of K for denoising
-	\item Type of interpolation (cubic spline vs nearest neighbor or linear)
-	\item Interpolation order (interpolate time and x direction together?  Individually?  Which one first?)
-\end{itemize}
+\subsection{Value of K}
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.1\textwidth]{Figures/fruit.jpg}
+\caption{SVD eigenvectos showing sharp drop off after 2 (may be different if bluer orders are included}
+\label{fig:eigenvalues}
+\end{figure} 
 
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.1\textwidth]{Figures/fruit.jpg}
+\caption{eigenvectors through the sixth one showing mostly noise following the first few}
+\label{fig:eigenvectors}
+\end{figure} 
+
+
+\subsection{Interpolation in x Choice}
 Reason for not linear interpolation:
 Due to the dispersion intrinsic to echelle spectrographs, the wavelength change between pixels is greater at greater wavelengths.  This means that the function of wavelength given pixel across an order will necessarily be concave down everywhere.  Consequently, linear interpolation of this function will systematically give erroneously low values.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.1\textwidth]{Figures/fruit.jpg}
+\caption{We could have a figure that compares linear interpolation, cubic interpolation, and monotonic interpolation along with a histogram of the residuals}
+\label{fig:xinterpolation}
+\end{figure} 
+
+Allowing for a non-zero smoothing parameter is bad as it allows for smoothness we have no reason to believe is true of the wavelength solution.  However, restricting to a monotonic wavelength solution follows from how the optics work since we are finding the solution order by order.
+
+\subsection{Order of Interpolation}
+Now doing time then x direction.  No real reason for the switch except this makes more sense (well, to me) and is faster.
 
 
 \section{Results} \label{sec:results}
 \subsection{Self Tests} \label{sec:test-self}
-First, let's have a sanity check.  Using a cubic spline scheme with no smoothing to predict wavelengths for the returned, denoised line center values, $\lambda(x,y,m,n)$, should return identical values to the assigned true wavelength for each line within machine error.
-This is what happens, for both ThArs and LFCs: look at the figure.
+First, let's have a sanity check.  Using a linear interpolator with no smoothing, we predict wavelengths for the denoised line center values, $\lambda(x,y,m,n)$, for an exposure used in the training set.  This returns identical values to the assigned true wavelength for each line within machine error for both ThArs and LFCs (see Fig. \ref{fig:sanity test}).
 
-As an only slightly less silly sanity check, we can also use the constructed PCA basis to predict wavelengths for the measured line centers of an exposure that was included in the set of exposures used to construct the basis.  This interpolation should return identical PCA coefficients for that time.  Differences in wavelengths will arise from a combination of 1) the error inherent in measuring line centers and 2) interpolation error of lines to other x positions in the pixel direction.
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.48\textwidth]{Figures/lfcLfcDenoised.pdf}
+\includegraphics[width=0.48\textwidth]{Figures/tharTharDenoised.pdf}
+\caption{results of interpolating to denoised value (probably not necessary, more an internal check of whether the code is at a base level behaving how we would expect.}
+\label{fig:sanityTest}
+\end{figure} 
 
-Difference in denoised x-values to measured ones? (translate into rv shift?)
-median and spread in errors in pixel (like 0.006) and RV (like 3.2 m/s?)
-Histograms
+We then predict wavelengths for the measured line centers for an exposure that was used to construct the basis.  The linear interpolation in time should return identical PCA coefficients for this time.  Differences in wavelengths will arise from a combination of 1) noise in the measured line centers and 2) any interpolation error of lines to other x positions.  Figure \ref{fig:selfTest} shows a histogram of the residuals.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.1\textwidth]{Figures/fruit.jpg}
+\caption{include median/spread of residuals?}
+\label{fig:selfTest}
+\end{figure} 
+
 
 \subsection{Training and Validation Tests} \label{sec:test-trainNvalid}
-A better test is to leave out some percentage of the calibration images from $\{exp_n\}$ while constructing the basis and weights with PCA.  We can then use the results from that PCA to predict wavelengths for lines in the calibrations images that were left out.  We will call the used calibration images the ``training set," and the left out exposures the ``validation set."
+A more realistic test is to leave out some percentage of the calibration images from $\{exp_n\}$ while constructing the basis and weights with PCA.  We can then use the results from that PCA to predict wavelengths for lines in the calibrations images that were left out.  We will call the used calibration images the ``training set," and the left out exposures the ``validation set."
 
 We chose to use 90\% of available exposures to train the PCA, and leave the remaining 10\% for validation.  Exposures were sorted into either set at random.  This will test how well PCA coefficients are interpolated to other times outside of the training set and therefore how well line centers can be reconstructed at all times.  As before, differences in wavelength will also be drawn from how well line centers are measured and error in interpolating to those measured values.  This second source of error was independently quantified in the second test described in the previous section.
 
-LFC looks good, ThAr is struggling a bit
-Difference in denoised x-values to measured ones? (translate into rv shift?)
-median and spread in errors in pixel (like 0.006) and RV (like 3.2 m/s?)
-Histograms
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.1\textwidth]{Figures/fruit.jpg}
+\caption{results from training and validation super-imposed over self test probably}
+\label{fig:tNvTest}
+\end{figure} 
+
 
 \subsection{Cross Tests} \label{sec:test-cross}
-Similar to the training and validation tests, we can also use one calibration source to construct the PCA basis and weights and the other to test the results.  For example, we can use LFC exposures to construct the wavelength solution, and then use it to predict wavelengths for measured line centers of ThAr lines, which will have their own assigned true wavelengths.  Likewise, we can use ThAr exposures to predict the wavelengths of LFC lines.  Note that errors in this test will also draw on the difference in quality of the two calibration sources being compared.
+Similar to the training and validation tests, we can also use one calibration source to construct the PCA basis and weights and the other to test the results.  For example, we can use LFC exposures to construct the wavelength solution, and then use it to predict wavelengths for measured line centers of ThAr lines, which will have their own assigned true wavelengths.  Likewise, we can use ThAr exposures to predict the wavelengths of LFC lines.
 
-LFC predicts ThAr better than ThAr can predict itself.
-ThAr predicting LFC is really messing up somehow, and I should figure out what it is (sorry!)
-
-%\subsection{ThAr Stuff?  Or Include it in Previous Subsections?}
+\begin{figure}[h]
+\centering
+\includegraphics[width=1\textwidth]{Figures/lfcgood.pdf}
+\caption{}
+\label{fig:crossTest}
+\end{figure} 
 
 \section{Comparisons to Other Methods} \label{sec:comparisons}
 I think we probably have to use the even/odd method to compare.
@@ -304,17 +350,19 @@ protect the fitting from near-singularities or bad conditioning of the
 linear-algebra operators.
 
 
+To test each method, we took an LFC exposure and separated the even and odd lines.  We then used the even lines to predict wavelengths for the odd lines and vice versa.  For example, for the parametric model, we fit a 2D, 8th-degree polynomial to the odd lines.  We then evaluated this polynomial at the positions of the even lines to assign them wavelengths.  We then reversed the process by fitting a polynomial to the even lines and evaluating that polynomial at the positions of the odd lines.  Differences between the polynomial assigned wavelengths and the assigned wavelengths of each line are shown in Figure \ref{fig:dsnMFit}.    For the non-parametric model, cubic spline interpolation was used in place of a polynomial fit.
+
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.9\textwidth]{Figures/polyval2d.pdf}
-\caption{}
+\includegraphics[width=\textwidth]{Figures/polyval2d.pdf}
+\caption{\lz{Unclear whether it is worth a direct comparison with the old EXPRES pipeline} Residuals of a parametric model.  A 2D, 8th-degree polynomial fit was used to predict the wavelengths of each line.   Left shows the difference between the predicted and true wavelength for each line (color) across each order.  Right is a histogram of these residuals.  Residuals have been translated to velocity shifts.}
 \label{fig:polyValFit}
 \end{figure} 
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.9\textwidth]{Figures/designMatrix.pdf}
-\caption{}
+\includegraphics[width=\textwidth]{Figures/designMatrix.pdf}
+\caption{Residuals of a parametric model fit using a design matrix.  A 2D, 8th-degree polynomial fit was used to predict the wavelengths of each line.  Otherwise, similar to Figure \ref{fig:polyValFit}.}
 \label{fig:dsnMFit}
 \end{figure} 
 
@@ -322,8 +370,8 @@ linear-algebra operators.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.9\textwidth]{Figures/noHierc.pdf}
-\caption{}
+\includegraphics[width=\textwidth]{Figures/noHierc.pdf}
+\caption{Residuals of a non-parametric model.  A PCHIP cubic spline interpolator was used to predict the wavelengths of each line.  otherwise similar to Figure \ref{fig:dsnMFit}.}
 \label{fig:intpFit}
 \end{figure} 
 
@@ -331,20 +379,18 @@ linear-algebra operators.
 
 \section{Discussion} \label{sec:discussion}
 
-Generalization to etalon
+Practical statements?  How many exposures are needed to implement this method at all.  How often do exposures have to be taken throughout a night (unless that's too dependent on instrument stability)
 
-Maybe some practical statements?  How many exposures are needed to implement this method at all.  How often do exposures have to be taken throughout a night (unless that's too dependent on instrument stability)
+Generalization to etalon:
+All methods described here are easily adapted to use with an etalon or any other arc length for which a list of lines and their wavelengths can be constructed.
 
-Some ideas about self-calibration. Once you know the space in which the
-spectrograph lives, every single science frame gives you information about
-where you are in that space; you don't need to look at the \lfc.
+Self calibration idea:
+Once we define a calibration space that captures all possible degrees of freedom for a stabilized spectrograph, then all exposures taken with the spectrograph contain information about where the spectrograph lies in that space at the time of the exposure.  Meaning, a science exposure can be used to determine the current state of the instrument in this calibration space.  It would therefore be possible to self-calibrate science exposures without the use of an additional wavelength calibration source.
 
-Chosing interpolations
-monotonic vs. smooth (univariate spline stuff)
+Perfect degeneracy problem:
+With any wavelength solution, there is a perfect degeneracy between what is defined as the ``center of the line'' and the resultant wavelength solution.  If, for example, a cross correlation method is used to extract RVs from the data, a systematic difference may be introduced depending on the definition of the center of the line.  In principle, the best way to mitigate this error would be to use a calibration source that looks like a star.
 
-perfect degenercy between definition of "Centroid of line" and "wavelength solution"
-cross correlation calls center of line something slightly different than what's happening when lines are being fit
-may lead to systematic differences
-in principle it would be preferable for the calibration source to look like a star
+
+How hard would it be to go bayesian?
 
 \end{document}
