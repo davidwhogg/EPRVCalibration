@@ -40,27 +40,7 @@ A non-parametric, hierarchical model for a precision spectrograph}
 \ldots and others\ldots
 
 \paragraph{Abstract:}
-There have been many hardware improvements in polygonal-fiber-fed,
-temperature-controlled, laser-frequency-comb or etalon-calibrated,
-high-resolution, extreme-precision radial-velocity spectrographs.
-Have the calibration methodologies improved to match?
-Here are three relevant observations:
-The first is that the calibration lines or spots from an etalon or
-comb (or even arc lamp) fill the spectral range with dense calibration points.
-The second is that the spectrograph lives in a stabilized,
-climate-controlled environment, in which the full optical system and
-detectors will only vary within a tiny range of configurations or
-settings.
-The third is that, given this stability, every calibration image
-ever taken is relevant to every science exposure ever taken; there is
-no reason to calibrate every exposure independently.
-The calibration methodology we propose here---\name---addresses these
-three problems by going non-parametric (no more polynomials!) and then
-reducing dimensionality with a robust principal-component method.
-We demonstrate the success of this method with comb and arc data
-from the \expres\ spectrograph.
-We find... [results and so on].
-
+\name is a hierarchical, non-parametric framework for wavelength calibrating precision spectrographs.  There have been many recent hardware improvements in highly-stabilized, extreme-precision radial-velocity spectrographs.  In such stabilized spectrographs, the full optical system and detectors will only vary within a tiny range of configurations.  Additionally, within a given range of stability, every calibration image ever taken contains information relevant to every science exposure ever taken.  The development of laser-frequency combs or etalons allows the spectral range of an instrument to be covered with dense calibration points.  Here, we describe a calibration method---\name---that is designed for this new era of stabilized instruments with high-line-density calibrators.  We find that a high density of calibration lines allows for the freedom of a non-parametric wavelength solution that can match or adapt to any instrument or detector oddities.  We can also denoise the available calibration data by using it to determine not just the wavelength solution, but also the possible space of wavelength solutions, which is small for a stabilized instrument.  We demonstrate the success of this method with data from a Menlo Systems laser frequency comb taken by \expres, the Extreme Precision Spectrograph.  We find that \name\ returns more accurate wavelength predictions than classic polynomial models.
 \section{Introduction} 
 
 Extreme precision radial-velocity (\eprv) programs have been
@@ -69,56 +49,52 @@ planets (CITE THINGS).
 These programs typically make use of spectrographs with resolutions on
 the order of $10^5$, which correspond to line widths on the order of
 $3000\,\mps$.
-Exoplanet science happens at $3\,\mps$ precisions, and the current
-instruments hope to get to $0.1\,\mps$ precisions (CITE THINGS).
-This means that new spectrographs are expected to be calibrated or
+Exoplanet science happens at $3\,\mps$ precisions, with current
+instruments hoping to reach $0.1\,\mps$ precision (CITE THINGS).
+This requires new spectrographs to be calibrated or
 stabilized to better than $10^{-4}$ of a pixel (assuming that the
 spectrograph is well sampled).
-And indeed, some hardware--software systems seem to be reaching these
-levels (CITE THINGS).
+Some hardware--software systems seem to be reaching these
+levels (CITE THINGS) .
 
 Here we propose to simplify and improve calibration programs for
 \eprv\ hardware systems with two very simple but novel ideas.
 The first flows from the observation that calibration sources---which
 include lamps, etalons, and laser-frequency combs (\lfc
-s)---illuminate the spectrograph with dense sets of lines; almost every
+s)---illuminate the spectrograph with very stable, very dense sets of lines; almost every
 location in the spectrograph image plane is surrounded by nearby,
 useful calibration lines.
 This recommends a calibration methodology that is
 \emph{non-parametric}:
 If every point in the spectrograph detector is surrounded by nearby
-calibration lines, the wavelength solution can be made simply an
-interpolation of the calibration data.
-There is no need to choose any functional form for the wavelength
-solution (such as an eighth-order polynomial, for example).
-Going non-parametric will improve calibration accuracy, because
-choosing a parametric form biases the calibration, and biases it
-badly when the form is inappropriate (as, for example, polynomials
-will be at the detector edges).
+calibration lines, the wavelength solution can, for example,  be made simply an interpolation of the calibration data.
 
-The second idea here flows from the observation that contemporary
+We expand on the work of Milakovi\'{c}2020, who proposed constructing a wavelength solution as multiple, segmented polynomials across an order by proposing a wavelength solution that is completely non-parametric.
+\lz{Should work in their paper more and praise it more?}
+
+The density of lines removes the need to enforce any functional form for the wavelength solution (such as an eighth-order polynomial, for example).
+Going non-parametric will improve calibration accuracy because
+choosing a parametric form biases the calibration, especially when the chosen function is inappropriate (as, for example, polynomials will be at detector edges).
+
+The second idea flows from the observation that contemporary
 \eprv\ instruments are incredibly stable.
 Temperature-controlled, fiber-fed pectrographs vary only slightly over
 the night or season, and only along a small number of axes in what you
 might call ``calibration space'', or the (very high dimensional) space
 of all possible wavelength solutions.
-That is, not only are they stable, but they don't have many accessible
-degrees of freedom.
-So it is not appropriate to fit each calibration exposure or calibrate
+That is, not only are the spectrographs stable, but they also have few accessible degrees of freedom.
+This renders it inappropriate to fit each calibration exposure or calibrate
 each science exposure independently.
-It makes sense to use the calibration data (or all the data) to
-determine the space in which the instrument can and does vary, and
-then in subsequent calibration work only permit the solution to live
-in the accessible part of calibration space.
-This structure is \emph{hierarchical}: The calibration data are used
-not just to determine the wavlength solution, but also to determine
+Instead, all the calibration data (or all the data) should be used to
+determine the space in which the instrument can and does vary.  Subsequent calibration work then need only determine where in the accessible part of calibration space the spectrograph existed.
+
+This structure is \emph{hierarchical}: the calibration data are used
+not just to determine the wavelength solution, but also to determine
 the possible space of wavelength solutions.
 In the statistics literature this concept is often described as
-\emph{de-noising}:
+\emph{de-noising}.  
 Every calibration exposure contains information about every other
-exposure; it doesn't just constrain the instrument locally in time.
-Thus every exposure can be improved (de-noised) with information
-coming from every other exposure.
+exposure.  Thus every exposure can be improved (de-noised) with information coming from every other exposure.
 
 The method we propose here---\name---embodies these ideas.
 It is a non-parametric, hierarchical, data-driven model for the
@@ -129,16 +105,15 @@ oddities.
 By being hierarchical, it restricts that freedom tremendously, but it
 does so appropriately for the observed variations in the
 spectrograph.
-\name\ is designed for temperature-controlled, bench-mounted, fiber-fed
+\name\ is designed for temperature-controlled, fiber-fed
 spectrographs with good calibration sources, such as laser-frequency
 combs, etalons, or good arc lamps.
-We have in mind the \eprv\ instruments and \eprv\ science cases.
-But we expect \name\ to have applications for other kinds of
-spectrographs in other contexts; the motivating ideas behind this
+We have in mind the \eprv\ instruments and \eprv\ science cases, but we expect \name\ to have applications for other kinds of
+spectrographs in other contexts.  The motivating ideas behind this
 project are true for almost every astronomical spectrograph.
 
 \section{Method} \label{sec:method}
-We operate on the two core ideas that the wavelength solution should be given enormous flexibility, but that in fact it will be living in a very low-dimensional space, where the degrees of freedom are set by the limited kinematics of the spectrograph hardware.
+We operate on the two core ideas that the wavelength solution should be given enormous flexibility, but that it lives in a very low-dimensional space, where the degrees of freedom are set by the limited kinematics of the stabilized, spectrograph hardware.
 
 We will pose the problem in the following way.  Given an exposure $n$, and order $m$, there is a relationship between
 the two-dimensional $(x,y)$-position on the detector and the
@@ -147,9 +122,9 @@ wavelength $\lambda$
 \lambda(x,y,m,n) = f(x,y,m;\theta_{n})
 \quad ,
 \end{equation}
-where $\theta_{n}$ is a big blob of parameters for this exposure.
+where $\theta_{n}$ represents the parameters describing a given exposure.
 
-A stabilized spectrograph should experience only low-degree variability, meaning the calibration of any image can be informed by the calibration of every other image.  To implement such a hierarchical model, we use the calibration data themselves to develop a low-dimensional basis for expressing the calibration data.
+A stabilized spectrograph should experience only low-degree variability, meaning the calibration of any image can be informed by the calibration of every other image.  To implement such a hierarchical model, we can use the calibration data themselves to develop a low-dimensional basis for expressing the calibration data.
 
 If the space of all calibration possibilities is in fact $K$-dimensional (where K is a small integer, i.e 2 or 8 or thereabouts), and if the calibration variations are so small that we can linearize, then the function $f(x,y,m;\theta_{n})$ could be replaced with a tiny model
 \begin{equation}
@@ -161,189 +136,99 @@ $g_0(x,y,m)$ is the fiducial or mean or standard calibration of the spectrograph
 the $a_{nk}$ are scalar amplitudes,
 and the $g_k(x,y,m)$ are basis functions expressing the ``directions'' in calibration space that the spectrograph can depart from the fiducial calibration.
 
-The challenge is to learn these basis functions from the data and get the $K$ amplitudes $a_{nk}$ for every exposure $n$.  There are many ways to discern these basis functions.  Here, we present a model using principal component analysis (PCA).  This is the correct thing to do in the limit where we have very high SNR, as is undeniably the case with calibration images.
+The challenge is to learn these basis functions from the data and get the $K$ amplitudes, $a_{nk}$, for every exposure $n$.  There are many ways to discern these basis functions.  In this paper, we present a model using principal component analysis (PCA).  This is the correct thing to do in the limit where we have very high SNR, as is undeniably the case with calibration images.
+
+\lz{Is this the place to mention options other than PCA? Or should we save that for the discussion?}
 
 \subsection{Data} \label{sec:data}
-We present results using data from \expres\, the EXtreme PRecison Spectrograph.  \expres\ is an environmentally-stabilized, fiber-fed, $R\sim137,000$, optical spectrograph (\lz{CJ and RB's papers}).  \expres\ has two different wavelength calibration sources, a ThAr lamp and a Menlo Systems laser frequency comb (LFC, e.g. \lz{Wilken+ 2012, Molaro+ 2013, Probst+ 2014, from RB's paper}).  ThAr exposures are taken at the beginning and end of each night.  LFC exposures are interspersed between science exposures every ~15 minutes.
+We present results using data from \expres\, the EXtreme PRecison Spectrograph.  \expres\ is an environmentally-stabilized, fiber-fed, $R\sim137,000$, optical spectrograph (\lz{Jurgenson2016, Blackman2020}).  \expres\ has two different wavelength calibration sources, a ThAr lamp and a Menlo Systems laser frequency comb (LFC, e.g. \lz{Wilken2012, Molaro2013, Probst2014}).  ThAr exposures are taken at the beginning and end of each night.  LFC exposures are interspersed between science exposures every ~15-30 minutes.
 
-The method and results discussed here are based off of 1260 LFC exposures and ThAr exposures over 90 days.  Exposures were taken whenever EXPRES was assigned time and so are randomly distriubted throughout the nine days
+The results and discussion presented here are based off of 1227 LFC exposures taken over two months months on 29 unique days.  LFC lines cover 40 echelle orders, which contain 19203 lines.  Though we primarily work with LFC data, we at times discuss applications to arc lamps.  These results use 78 ThAr exposures that were taken over the same range of time.  ThAr lines cover all 86 extracted orders of \expres\ and includes 5295 lines.
 
-\lz{(Discussion of number of orders covered or number of lines in LFC and/or ThAr?)}
+For the results presented in this paper, we work with the 1D, optimally extracted data.  This removes the y-dependence from equations 1 and 2.  Gaussian profiles are fit to each line in the 1D, extracted data.  The mean of each fitted Gaussian is taken to be the center of the line (see \lz{Petersburg2020} for more details).  While precisely defining and determining line positions is essential to precise wavelength calibration, we consider the task out of scope for this paper.  \name\ proceeds from a given list of orders, line wavelengths, and pixel positions of each line for each exposure.
 
-For the results presented in this paper, we work with the 1D, optimally extracted data.  This removes the y-dependence from equations 1 and 2.  Gaussian profiles are fit to each line in the 1D, extracted data.  The mean of each fitted Gaussian is taken to be the center of the line.  This process is described in detail in \lz{RP Paper} and considered out of scope of this paper.  The method described proceeds from a given list of orders, line wavelengths, and line centers for each exposure.
-
-\expres\ exposures are separated into different ``instrumental epochs," which correspond to atypical, large instrument changes that affected the position of the echellogram on the detector, the shape of the instrumental PSF, or the calibration sources (\lz{can cite either Ryan's paper for more detail?}).  Because significant instrumental changes break the assumption of only low-dimensional variations in the spectrograph hardware, we treat each instrument epoch independently.
+\expres\ exposures are separated into different ``instrumental epochs," which correspond to atypical, hardware changes that affected the position of the echellogram on the detector, the shape of the instrumental PSF, or the calibration sources.  Because significant instrumental changes break the assumption of only low-dimensional variations in the spectrograph hardware, we treat each instrument epoch independently.
 
 \subsection{Hierarchical De-Noising of Calibration Frames} \label{sec:denoising}
-Let $\{exp_n\}$ be the set of calibration exposures within an instrument epoch.  These are the exposures to be used in constructing $g_k(x,y,m)$.  We first identify the full list of lines we can expect to find in a calibration image from this epoch.  A line is uniquely defined by a combination of order, $m$, and ``true" or theoretical wavelength of that line, $\lambda$.  We define $\{l_{m,\lambda}\}$ to be the complete list of unique lines found in $\{exp_n\}$.
+\lz{Concerns: 1) how to best phrase the problem using variables?, 2) how in-depth is too in-depth?}
 
-For each line, $l_{m,\lambda}$, we then find the fitted line center, $x_{n,l}$, in pixel space, for that line in each calibration exposure.  If this line is missing from an exposure (e.g. it was covered by noise or off the edge of its usual order), we insert a $NaN$ for that line center instead.
+Let $\{exp_n\}$ be the set of calibration exposures within an instrumental epoch.  These exposures will be used in constructing $g_0(x,y,m)$ and $g_k(x,y,m)$ in equation 2.  We first identify the full list of lines we can expect to find in a calibration image from this epoch.  A line is uniquely defined by a combination of order, $m$, and ``true" or theoretical wavelength assigned to that line, $\lambda$.  Let $\{l_{m,\lambda}\}$ be the complete list of unique lines found in $\{exp_n\}$.
+
+Each line, $l_{m,\lambda}$, has a fitted line center, $x_{n,l}$, in pixel space, for each calibration exposure $exp_n$.  If this line is missing from an exposure (e.g. the fit failed due to noise, the line isn't in its usual order, etc.), we set $x_{n,l} = NaN$ for that line center in that exposure.  This allows us to construct a $N \times M$ matrix of line positions for each of $M$ lines for each of $N$ exposures.
 
 Lines that are missing from greater than some percent of exposures are completely cut from the analysis.  Exposures that are missing greater than some percent of lines are also cut.  We use a threshold percentage of 50\% for both lines and exposures.  This largely affects the first lines on either end of an order and exposures with spuriously low signal.  Typically, about 0.2\% of lines and cut for LFC based calibration and 0.25\% of files are cut.
 
-Missing line center measurements are replaced with denoised estimates using iterative PCA.  For each missing line center measurement, we initialize their value to the mean of the nearest $n$ exposures in time, where $n$ is typically $9$ exposures.  We then find a fiducial calibration of the spectrograph,  $g_0(x,y,m)$, for which we use the mean line center value for each identified line.  We subtract this fiducial calibration from each exposure's measured line centers and run PCA on the difference between the measured and mean line center for each exposure.  This process gives us $a_{nk}$ and $g_k(x,y,m)$.
+Missing line center measurements are replaced with denoised estimates using iterative PCA.  For each missing line center measurement, we initialize its value to the mean of the nearest $h$ exposures in time, where $h$ is typically $9$ exposures.  We then find a fiducial calibration of the spectrograph,  $g_0(x,y,m)$, which is set to be the mean line center value for each identified line over all exposures.  We subtract this fiducial calibration from each exposure's measured line centers and run PCA on the difference between the measured and mean line center for each exposure.  The resulting principal components are $g_k(x,y,m)$ in equation 2 while the amplitude of each principal component is $a_{nk}$.
 
-Using those values with equation 2 and some small integer (e.g. 2) for $K$, we can reconstruct a de-noised matrix of line centers for each exposure.  Missing line center measurements are replaced with values from this reconstruction.  We iterate until the values of the missing line centers change by less than 0.01\% of a pixel.  This convergence suggests that the PCA is no longer being swayed by outliers and is truly ``de-noised."
+Using those values with equation 2 and some small integer (e.g. 6) for $K$, we can reconstruct a denoised matrix of line centers for each exposure.  Missing line center measurements are replaced with values from this reconstruction.  We iterate until the values of the missing line centers change by less than 0.01\% of a pixel.  This convergence suggests that the PCA is no longer being swayed by outliers and is truly ``de-noised."   We have found this typically takes less than 30 iterations.
 
 \begin{algorithm}
 \SetAlgoLined
-\textbf{Inputs}: ${m,\lambda}$, $\{l_{m,\lambda}\}$ \;
-\While{change in bad lines $>$ 0.01\%}{
+\textbf{Inputs}: $m$, order of each line; $\lambda$, assigned wavelength of each line; $\{x_{n,l}\} $, matrix of pixel line position of each line $l$ and for each exposure $n$\;
+\While{change in missing or outlier line centers $>$ 0.01\%}{
 	$g_0(x,y,m) = \overline{\{x_{n,l}\}}$\;
 	find $U, \Sigma, V$ s.t. $U\Sigma V^* = (x_{l,n}-g_0(x,y,m))$\;
 	let $a_{n,k} = U\cdot \Sigma$ and $V = g_k(x,y,m)$\;
-	$\lambda(x,y,m,n) = g_0(x,y,m) + \sum_{k=1}^K a_{nk}\,g_k(x,y,m)$ where $K=2$\;
+	$\lambda(x,y,m,n) = g_0(x,y,m) + \sum_{k=1}^K a_{nk}\,g_k(x,y,m)$ for $K=6$\;
 	$\{x_{n,l}\} = \lambda(x,y,m,n)$ where $\{x_{n,l}\}$ was initially $NaN$
 	}
 \caption{Hierarchical De-Noising}
 \end{algorithm}
 
-Following the de-noising process, we check for deviant line centers.  This is aimed at catching lines that have been mis-identified or poorly fit, resulting in erroneous line centers.  Outliers are identified via a simple sigma cut for each line.  Any line center that is reported at more than $3\sigma$ away from the mean line center value is relabeled a ``bad line,'' and we repeat the process of hierarchical de-noising. (\lz{Should probably add something about why the sigma cut works})
+Following the de-noising process, we check for deviant line centers.  This is aimed at catching lines that have been mis-identified or poorly fit, resulting in erroneous line centers.  Outliers are identified via a simple sigma cut for each line.  Any line center that is reported at more than $3\sigma$ away from the mean line center value is relabeled a ``bad line.''  We then repeat the process of hierarchical de-noising to also replace the line centers of these bad lines. (\lz{Should probably add something about why the sigma cut works?})
 
 \subsection{Non-Parametric Calibration} \label{sec:nonparam}
-The process of hierarchical de-noising gives us $a_{nk}$, which captures the variability of the instrument.  We can interpolate $a_{nk}$ with respect to housekeeping data to determine $\lambda(x,y,m,n)$ at any time.  In this paper, we show results where $a_{nk}$ is interpolated with respect to time, but it is possible to incorporate other information such as temperature, pressure, or telescope position. (\lz{Does this belong in the discussion?})
+The process of hierarchical de-noising gives us $a_{nk}$, which captures the variability of the instrument.  We can interpolate $a_{nk}$ with respect to housekeeping data to determine line positions, $\lambda(x,y,m,n)$, for any state of the spectrograph.  In this paper, we show results where $a_{nk}$ is interpolated with respect to time, but it is possible to incorporate other information such as temperature, pressure, or telescope position.
 
-Once we have the line center for every line in $\{l_{m,\lambda}\}$, each of which is associated with a known wavelength, we can interpolate the known wavelengths over line centers to any position in x in a given order.  For example, interpolating onto every integer x will generate wavelengths for each pixel in an order.
-
+Once we have the line center for every line in $\{l_{m,\lambda}\}$, each of which is associated with a known wavelength, we can interpolate  the known wavelengths over line centers to any position in x in a given order.  For example, interpolating onto every integer x will generate wavelengths for each pixel in an order.
 \begin{algorithm}
 \SetAlgoLined
-\textbf{Inputs}: new time, new line centers, new orders\; %command not working for w/e reason
-Let $t_n$ be the time associated with exposure $n$\;
-let $t_n'$, $x_n'$, and $m_n'$ be the new time, line centers, and orders we want wavelengths for\;
-Let $a_{n,k}'$ be the interpolation of $a_{n,k}$ to time $t_n'$\;
-$\lambda(x,y,m,n)' = g_0(x,y,m) + \sum_{k=1}^K a_{nk}'\,g_k(x,y,m)$ where $K=2$\;
-\For{each unique $m_n'$}{
-	${l_n,m}$ from $\lambda(x,y,m,n)'$
-	interpolate ${l_n,m}$ onto $x_n'$\;
+\textbf{Inputs}: $g_0(x,y,m)$; $a_{n,k}$; $g_k(x,y,m)$; $t_n$, time of each exposure; $t'$, time we want wavelengths for\;
+Interpolate $a_{n,k}$ with respect to time to determine $a_{n,k}'$ for time $t'$\;
+Calculate pixel line positions for time $t'$ by evaluating\;
+$\lambda(x,y,m,n)' = g_0(x,y,m) + \sum_{k=1}^K a_{nk}'\,g_k(x,y,m)$ for $K=6$\;
+\For{each unique $m$}{
+	interpolate ${l_n,m}$ onto pixels that we want wavelengths for\;
 	}
 \caption{Non-Parametric Wavelength Solution}
 \end{algorithm}
-\lz{What's fancy math symbol for interpolate?}
 
-\subsection{Choice Choices} \label{sec:choices}
-Implementing \name required choosing some global variables and methods that we believe is optimal for constructing a high-fidelity wavelength solution.  We discuss these choices here and how we came to each decision.
-
-\subsection{Value of K}
-The value of $K$ determines how many principal components are used to reconstruct de-noised line centers.  This $K$ needs to be large enough that all variability in the spectrograph is captured.  Too large, and the reconstruction will begin to incorporate noise, defeating the purposes.
-
-We settled on a $K$ value of 2.  Figure \ref{fig:eigenvectors} shows the eigenvectors of the PCA plotted on a log scale for both a LFC-based calibration scheme (blue), and a ThAr-based one (green).  In both cases, there is a precipitous drop off at one, indicating that the later principal components have a much smaller contribution.
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.5\textwidth]{Figures/ss.pdf}
-\caption{Eigenvectors from PCA as step functions.  The results for using only LFC exposures (blue) and only using ThAr exposures (green) are both shown on a log scale.  After 1, there is a order of magnitude drop for both the LFC and the ThAr.}
-\label{fig:eigenvectors}
-\end{figure} 
-
-Figures \ref{fig:pcLfc} and \ref{fig:pcThar} shows the first 6 principal components for the LFC and ThAr respectively.  In both cases there is clear structure in the first and second principal components.  It is doubly encouraging that this structure appears the same in both the case with the LFC and the ThAr.
-
-The later principal components show mostly noise or are swayed by large noise sources.  For example, the band on the left side of each order in principal component 3 for the LFCs is likely due to lower signal on the edges of the order from the blaze function, giving more uncertain line center measurements.  The diagonal banding visible in the sixth principal component can be traced to what we believe are detector defects.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth]{Figures/pcsLfc6.png}
-%\includegraphics[width=\textwidth]{Figures/pcsLfc6.pdf}
-\caption{The first six principal components using LFC exposures.  There is clear structure for the first two principal components.  \lz{Principal components 3-5 show mostly noise (do they though?)}.  Principal component 6 shows structure from what we believe to be detector defects.}
-\label{fig:pcLfc}
-\end{figure}
-
-\begin{figure}[t!]
-\centering
-\includegraphics[width=\textwidth]{Figures/pcsThar6.png}
-%\includegraphics[width=\textwidth]{Figures/pcsThar6.pdf}
-\caption{The first six principal components using ThAr exposures.  Note the similarities with the LFC result shown in Figure \ref{fig:pcLfc}.}
-\label{fig:pcThar}
-\end{figure}
-
-\subsection{Interpolation in Time}
-Figure \ref{fig:nightlyVariation} shows the amplitude of the first and second principal component with respect to time on the left.  Again, it is comoforting to note that the LFC and ThAr versions show the same shape.  Though there are no large trends over the ninety days of data shown here, there is a clear linear trend within each night (see Fig. \ref{fig:nightlyVariation} right).  We therefore interpolate these amplitudes with respect to time using a simple linear interpolation scheme.
-
-\lz{linear interpolation actually doesn't look super great for the second principal component}
-
-\begin{figure}[h!]
-\centering
-\includegraphics[width=0.56\textwidth]{Figures/pcAs.pdf}
-\includegraphics[width=0.42\textwidth]{Figures/pcAs_byDay.pdf}
-\caption{Amplitude of the first two principal components show as a function of time (left) or fraction of a day (right).  Points mark the times at which we have calibration data.  Lines show the result of a linear interpolation.  Left: amplitudes as a function of time for both LFC (blue) and ThAr (green).  The top plot shows the amplitudes for the first prinicpal component while the bottom plot shows the amplitudes for the second principal component.  Note that the shape of the curves is similar regardless of calibration source.  Recall from Figures \ref{fig:pcLfc} and \ref{fig:pcThar} that the corresponding principal components are also fairly similar.
-Right: amplitudes of the first two principal components determined by the LFC exposures only.  Here exposures are grouped by day and plotted with respect to what time of day the exposure was taken.  A linear interpolation through all the LFC exposures taken in one day are shown as black line.  Points are colored by the MJD of the exposure.}
-\label{fig:nightlyVariation}
-\end{figure} 
-
-\subsection{Interpolation in Pixel}
-Interpolation of wavelengths over line centers is done order by order using a Piecewise Cubic Hermite Interpolating Polynomial (PCHIP) interpolator.  This interpolation incorporates the flexibility needed to model the changing dispersion of the spectrograph across an order while also enforcing monotonicity.
-
-Due to the dispersion intrinsic to echelle spectrographs, the wavelength change between pixels is greater at greater wavelengths.  This means that the function of wavelength given pixel across an order will necessarily be concave down everywhere.  Consequently, linear interpolation of this function will systematically give erroneously low values.
-
-A more classic cubic spline interpolator runs into issues with lines in the ThAr that are blended and therefore very close together.  Very close lines cause huge deviations from the correct wavelengths, as seen in Figure \ref{fig:xinterp}, which highlights deviations caused by a blend in a specific order of ThAr exposures.
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=\textwidth]{Figures/intpx_tests.pdf}
-\caption{Results from different interpolation schemes in the pixel direction.
-Left: resultant wavelength solution curves when using ThAr lines (green points) to predict wavelengths for LFC lines (black points).  The green points are being used to predict values for the black points.  Different interpolation schemes are shown in different colors.  The largest deviation comes with the classic cubic spline (pink).  The other models are hard to distinguish.
-Right: histograms of residuals for each method.  The linear interpolation model (yellow) is asymmetric with disproportionately positive residuals.  The classic cubic spline residuals (pink) has very spread out residuals, the extremes of which have been cut off in the figure.  The residuals from an interpolation scheme that incorporates smoothing (blue) are non-Gaussian and rather plateau about zero.  Residuals from the PCHIP interpolator (orange) has the strongest peak at 0 and is roughly Gaussian.}
-\label{fig:xinterp}
-\end{figure} 
-
-These huge digressions can be avoided by allowing for some smoothing in the interpolation.  In Figure \ref{fig:xinterp}, we show an example in blue using scipy's Univarate Spline method.  While the result appears to follow the calibration lines much better, the smoothing ultimately causes larger residuals that are spatially correlated (Fig. \ref{fig:xinterp}, right).
-
-For all orders, the edges will be overestimated while the middle will be underestimated.  (\lz{Do I need to include a figure for this?  Or should I just not go into this much detail})  This indicates that the smoothing is causing the resultant wavelength solution to underestimate the curvature of the pixel-wavelength relation.  It also reduces the benefit we get from moving to a non-parametric model by enforcing a smoothness we have no reason to believe is true in the data.
-
-We instead turn to the PCHIP interpolator, which damps down huge deviations in the traditional cubic spline by requiring the resulting interpolated function to be monotonic.  This is a constraint we know is true from the optics since interpolation in the pixel direction is carried out order-by-order.  From Figure \ref{fig:xinterp}, it is clear that the PCHIP interpolator returns the lowest residuals.
-
-\subsection{Order of Interpolation}
-Now doing time then x direction.  \lz{No real reason for the switch except this makes more sense (well, to me) and is faster.}
-
-
-\section{Results} \label{sec:results}
+\section{Tests}
 \subsection{Self Tests} \label{sec:test-self}
-First, let's have a sanity check.  (\lz{Is it worth mentioning this at all?}) Using a linear interpolator with no smoothing, we predict wavelengths for the denoised line center values, $\lambda(x,y,m,n)$, for an exposure used in the training set.  This returns identical values to the assigned true wavelength for each line within machine error for both ThArs and LFCs (see Fig. \ref{fig:sanity test}).
+For these so-called ``self tests", we use \name\ to  predict wavelengths for the measured line centers of a calibration exposure that was used to construct the basis.  The linear interpolation in time should return identical PCA coefficients for this time, as the calibration data was used in the PCA.
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.48\textwidth]{Figures/lfcLfcDenoised.pdf}
-\includegraphics[width=0.48\textwidth]{Figures/tharTharDenoised.pdf}
-\caption{Residuals for predicted wavelengths for the denoised x-values of an exposure used to train the PCA.   As expected, the residuals are zero within machine error for the case where LFCs are used and where ThArs are used.}
-\label{fig:sanityTest}
-\end{figure} 
-
-We then predict wavelengths for the \textit{measured} line centers for an exposure that was used to construct the basis.  The linear interpolation in time should return identical PCA coefficients for this time.  Differences in wavelengths will arise from a combination of 1) noise in the measured line centers and 2) any interpolation error of lines to other x positions.  Figure \ref{fig:testHists} shows a histogram of the residuals for both the LFC (left) and the ThAr (right) in black.
+The predicted wavelengths for these measured line centers should match the assigned wavelengths for these calibration lines within the range of error of the measured line center.  Per the EXPRES pipeline, the LFC line centers used in this analysis are measured by fitting each LFC line to a Gaussian \lz{Peteresburg2020}.  The mean of the fitted Gaussian is set to be the line center.  The error in this fitted value is on average 2.1 $\mps$.  Additional error will arise from interpolation error of wavelengths to other pixel positions.  
 
 \subsection{Training and Validation Tests} \label{sec:test-trainNvalid}
-A more realistic test is to leave out some percentage of the calibration images from $\{exp_n\}$ while constructing the basis vectors and weights with PCA.  We then use the results from this PCA to predict wavelengths for lines in the calibrations images that were left out.  The used calibration images represent the ``training set," while the left out exposures make up the ``validation set."
+A more full-scale test is to leave out some percentage of the calibration images from $\{exp_n\}$ while constructing the basis vectors and weights with PCA.  We can then use the resulting basis to predict wavelengths for lines in the calibrations images that were left out.  The used calibration images represent the ``training set," while the left out exposures make up the ``validation set."
 
-We chose to use 90\% of available exposures to train the PCA, and leave the remaining 10\% for validation.  Exposures were sorted into either set at random.  \lz{(Worth including?) Because only two ThAr exposures were taken each night (at the very beginning and end), leaving ThAr exposures out often left just one ThAr exposure per night.  It was therefore impossible to run a similar test using just ThAr exposures.}
+For these tests, we used 90\% of available exposures to train the PCA, and left the remaining 10\% for validation.  Exposures were sorted into either set at random.  Contrary to the self tests, these results may also accrue errors from interpolating the principal component amplitudes with respect to time, i.e. we are now also testing how well we can re-construct line centers for all times.   As before, differences in wavelength will also be drawn from how well line centers are measured in an exposure and any error in interpolating to those measured values.  This second source of error was independently quantified in the second test described in the previous section.
 
-We are now also testing how well PCA coefficients are interpolated to other times outside of the training set, and, consequently, how well line centers can be reconstructed for all times.  As before, differences in wavelength will also be drawn from how well line centers are measured and error in interpolating to those measured values.  This second source of error was independently quantified in the second test described in the previous section.
+\lz{I had some discussion of cross tests (i.e. using LFC to predict ThAr and ThAr to predict LFC, but I removed it since we decided to leave ThAr mostly out of this due to its data generally being worse}
 
-\subsection{Cross Tests} \label{sec:test-cross}
-Similar to the training and validation tests, we can also use one calibration source to construct the PCA basis and weights and the other to test the results.  We used LFC exposures to construct a wavelength solution, and then used it to predict wavelengths for measured line centers of ThAr lines.  We can then use the assigned wavelengths for each ThAr line to assess how well we predicted the wavelengths for these lines.  Likewise, we can use ThAr exposures to predict the wavelengths of LFC lines.
+\section{Results} \label{sec:results}
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=1\textwidth]{Figures/lfcgood.pdf}
-\caption{Residuals from different wavelength calibration tests.  Left: residuals of wavelength predictions for LFC lines.  In black are the results from using all LFC exposures to construct a wavelength solution, and using it to predict wavelengths for the measured line centers of each exposure.  Over-plotted in blue are the residuals from the training and validation tests.
-Right: residuals of wavelength predictions for ThAr lines or using ThAr lines.  The black histogram is the same as in the left plot, but with ThAr exposures instead of LFC exposures.  In blue is the residuals from using the LFC exposures to construct a wavelength solution that is then used to predict ThAr line wavelengths.  In green is using ThAr exposures to predict LFC line wavelengths. }
+\includegraphics[width=.5\textwidth]{Figures/lfcgood.png}
+\caption{Residuals of different wavelength calibration tests.  Shown as a black outline is the distribution of residuals from the self test described in Section \ref{sec:test-self}, which incorporates errors in the fitted line centers and interpolating with respect to pixel.  Over-plotted in blue are the residuals from the training and validation test described in Section \ref{sec:test-trainNvalid}, which builds on the self tests by additionally incorporating possible errors from interpolating line positions through time.\
+\lz{Considering adding a histogram of line center errors to show it is on par?  i.e. the limitation is the line fit.  What other information is needed?  i.e. the median/mean or spread?}}
 \label{fig:testHists}
 \end{figure} 
 
-Results from these tests are shown in Figure \ref{fig:testHists}.  The results of the self tests for LFC (left) and ThAr (right) exposures are shown as black outlines.  This histogram combines residuals from all exposures.  The self test represents the limit of how well the line centers at any given time can be predicted, since here we are predicting the line centers for an exposure used in the construction of $a_{nk}$.  \lz{How to quantify error from measurement of line center}.
+Results from these tests are shown in Figure \ref{fig:testHists}.  The result of the self tests for LFC exposures is shown as a black outline.  This histogram combines residuals from all exposures.  The self test represents the limit of how well the line centers at any given time can be predicted, since here we are predicting the line centers for an exposure used in the construction of $a_{nk}$. 
 
-Overplotted in the left plot of Figure \ref{fig:testHists} are the residuals from training the wavelength solution with only 90\% of LFC exposures and predicting the wavelengths for the remaining 10\% of exposures.  The two histograms match very closely, indicating that very little error is introduced when predicting denoised x values for times not used in the construction of the wavelength solution.
+Overplotted in blue are the residuals from training the wavelength solution with only 90\% of LFC exposures and predicting the wavelengths for the remaining 10\% of exposures.  The two histograms match very closely, indicating that very little error is introduced when predicting denoised x values for times not used in the construction of the wavelength solution.
 
-The right plot in \ref{fig:testHists} shows results involving the ThAr exposures.  Similar to with the LFC, the histogram of the ThAr self tests is shown in black, and provide a limit on how well lines at different times can be predicted.  If we use the LFCs, all taken at different times, to predict the ThAr lines, we see that again the histograms match very closely.  This confirms that interpolating $a_{nk}$ w.r.t. time is introducing little error.
 
-Overplotted in green is the result from using ThAr lines to predict LFC line wavelengths.  These residuals show a scatter comparable to other results where the wavelength value of ThAr lines are being predicted.  This implies that using the ThAr to predict wavelengths is dominated by uncertainties in the measured line centers for the ThAr.
-\lz{why is it skewed left a little??}
-
-\section{Parametric Model} \label{sec:comparisons}
-Classically, pipelines employ polynomials to construct smooth wavelength solutions for each exposure.  For example, the \expres\ pipeline described in \lz{Petersburg+} found the $\theta_{n}$ from equation 1 to be the amplitudes of some 2D, 9th-order polynomial in $x$ and $m$ for each $n$, making the equivalent to equation 2 the following:
+\section{Comparison to Classic, Parametric Model} \label{sec:comparisons}
+Classically, pipelines employ polynomials to construct smooth wavelength solutions for each exposure.  For example, the \expres\ pipeline described in \lz{Petersburg2020} prescribed $\theta_{n}$ from equation 1 to be the amplitudes of a 2D, 9th-order polynomial in $x$ and $m$ for each $n$, making the equivalent to equation 2 the following:
 \begin{equation}
 \lambda(x,y,m,n) = \sum_{i=0}^9\sum_{j=0}^9 c_{nij}\, x^i\,m^j + \mathrm{noise}
 \quad ,
 \end{equation}
-where the $c_{nij}$ are coefficients unique to exposure $n$.  These coefficients are then smoothed by a third-order polynomial over time.  This same polynomial was used to construct wavelengths for non-calibration exposures.
-Coefficients, $c_{nij}$, were found that minimize an objective $Q$ that is something like the L2-norm:
+where $c_{nij}$ are coefficients unique to exposure $n$.  These coefficients are then smoothed by a third-order polynomial over time.  This third-order polynomial would be evaluated at the time of non-calibration exposures to re-construct a 2D, 9th-order polynomial wavelength solution for that exposure.
+Coefficients, $c_{nij}$, were found that minimize an objective $Q$ that is the L2-norm:
 \begin{equation}
 Q = ||\lambda(x,y,m,n) - \sum_{i=0}^9\sum_{j=0}^9 c_{nij}\, x^i\,m^j||_2^2
 \quad .
@@ -362,58 +247,124 @@ For another, the objective function could be made soft to permit catastrophic ou
 For yet another, there are rescaling issues for the products $x^i\,m^j$ to protect the fitting from near-singularities or bad conditioning of the linear-algebra operators.
 
 \subsection{Comparisons}
-To test each method, we took an LFC exposure and separated the even and odd lines.  We then used the even lines to predict wavelengths for the odd lines and vice versa.
+To test the parametric vs. the non-parametric method, we took an LFC exposure and separated the even and odd lines.  We then used the even lines to predict wavelengths for the odd lines and vice versa.
 
-For example, for the parametric model, we fit a 2D, 8th-degree polynomial to the odd lines.  We then evaluated this polynomial at the positions of the even lines to assign them wavelengths.  We then reversed the process by fitting a polynomial to the even lines and evaluating that polynomial at the positions of the odd lines.  Differences between the polynomial assigned wavelengths and the assigned wavelengths of each line are shown in Figure \ref{fig:dsnMFit}.
-
-We run the test for both the original method described in \lz{Petersburg+}, but with an 8th degree polynomial rather than 9th, and changing the polynomial for the revised description of a 2D polynomial given in equation 5.  In the second case, the polynomial is also fit using a design matrix rather than by minimizing an objective (\lz{What's the fancier way of saying this}).  For the non-parametric model, we repeat the test using a cubic spline interpolator in place of a polynomial fit.
-
-The results are shown in Figures \ref{fig:polyValFit}, \ref{fig:dsnMFit}, and \ref{fig:intpFit}.  Residuals for each line plotted with respect to order and x-pixel are shown on the left while the histogram of the residuals are shown on the right.  Moving from \lz{Petursburg+} to a design matrix polynomial fit with half the terms already reduces some of the correlated structure in the residuals that can be seen on the left in Figure \ref{fig:polyValFit}.  However, the same vertical stripes can be seen in the residuals for both methods.  This along with other evidence (outside the scope of this paper) suggests that these vertical stripes are due to defects present in the detector.
-
-Using a non-parametric model, i.e. a cubic spline, gets rid of all correlated structure in the residuals and results in smaller residuals that are better centered around zero.  The non-parametric model was able to account for the high-order detector defects that are smoothed over by a polynomial fit, allowing for a more accurate fit.
-
-\lz{Could (should) combine these three plots better.}
+For example, for the parametric model, we fit a 2D, 9th-degree polynomial to the odd lines.  We then evaluated this polynomial at the positions of the even lines and compared those returned wavelengths to the assigned wavelength of each line.  We then reversed the process by fitting a polynomial to the even lines and evaluating that polynomial at the positions of the odd lines.  Differences between the polynomial given wavelengths and the assigned wavelengths of each line are shown in Figure \ref{fig:parametricTest}, left.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=\textwidth]{Figures/polyval2d.png}
-%\includegraphics[width=\textwidth]{Figures/polyval2d.pdf}
-\caption{\lz{Unclear whether it is worth a direct comparison with the old EXPRES pipeline} Residuals of a parametric model.  A 2D, 8th-degree polynomial fit was used to predict the wavelengths of each line.   Left shows the difference between the predicted and true wavelength for each line (color) across each order.  Right is a histogram of these residuals.  Residuals have been translated to velocity shifts.}
-\label{fig:polyValFit}
+\includegraphics[width=\textwidth]{Figures/parametricTest.png}
+%\includegraphics[width=\textwidth]{Figures/parametricTest.pdf}
+\caption{Comparison of residuals to a parametric model (left-most) vs. a non-parametric model (right-most).  In each case, the color bar shows the difference between the predicted wavelength and the true wavelength for each line in units of velocity shift.  The center plot shows a histogram of the residuals of the polynomial fit (blue) and the non-parametric fit (green).  Medians of the residuals for each model are given in the top-right corner of the center plot in their corresponding colors.}
+\label{fig:parametricTest}
+\end{figure}
+
+We run the test using a polynomial derived as described in \lz{Petersburg2020} with discussed improvements.  We repeat the test using a PCHIP cubic-spline as a model rather than a polynomial.  The results are shown in Figure \ref{fig:parametricTest}.  For each method, we plot each line with respect to order and x-pixel and colored by the difference between the predicted and assigned wavelength for that line in units of $\mps$.
+
+The residuals of the parametric model are shown in the left-most plot of Figure \ref{fig:parametricTest} while the residuals of the non-parametric model are shown in the right-most plot.  The center plot is a histogram of the residuals of the two methods.  The residuals from using the non-parametric model show less structure, are less spread around zero, and more symmetric about zero.  The non-parametric model was able to account for the high-order detector defects that are smoothed over by a polynomial fit, resulting in a more accurate fit.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{Figures/waveResids.png}
+\caption{Comparisons of parametric and non-parametric wavelength solutions using either just ThAr lines or LFC lines. Left: the difference between each wavelength solution evaluated at the position of the LFC lines and the assigned wavelength of that LFC line.  The right plot is simply a zoom in of the left plot.  Note the large deviation when trying to implement Excalibur with just ThAr lines, which are much fewer in number.  The classic, polynomial  fit exhibits similar residuals regardless of whether the set of ThAr lines or LFC lines are used.  Excalibur using LFC lines exhibit the lowest residuals.}
+\label{fig:waveResids}
 \end{figure} 
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=\textwidth]{Figures/designMatrix.png}
-%\includegraphics[width=\textwidth]{Figures/designMatrix.pdf}
-\caption{Residuals of a parametric model fit using a design matrix.  A 2D, 8th-degree polynomial fit of the form given in equation 5 was used to predict the wavelengths of each line.  Otherwise, similar to Figure \ref{fig:polyValFit}.}
-\label{fig:dsnMFit}
-\end{figure} 
+Incorporating a hierarchical, de-noising element results in ever better residuals!
+
+\lz{come on, future Lily, add more here}
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=\textwidth]{Figures/noHierc.png}
-%\includegraphics[width=\textwidth]{Figures/noHierc.pdf}
-\caption{Residuals of a non-parametric model.  A PCHIP cubic spline interpolator was used to predict the wavelengths of each line.  otherwise similar to Figure \ref{fig:dsnMFit}.}
-\label{fig:intpFit}
+\includegraphics[width=0.5\textwidth]{Figures/allHists.png}
+\caption{Histogram of residuals for different wavelength calibration methods.  The parametric (blue) and non-parametric (green) histograms are the same as described in Figure \ref{fig:parametricTest}.  In orange is the histogram of residuals to the full Excalibur model, which includes the hierarchical component.  The median of the residuals for each model is given in the top-right corner in each model's corresponding color.}
+\label{fig:allHists}
 \end{figure} 
 
 \section{Real Data Through to RVs} \label{sec:realdata}
+\lz{Debra and RP currently working through this.  Results seem good}
+
+\section{Choice Choices} \label{sec:choices}
+The implementation of  \name presented here required determining global variables and methods that we believe are or are close to optimal for constructing a high-fidelity wavelength solution.  This section will describe each choice and the associated decision-making process.
+
+\subsection{Value of K}
+The value of $K$ determines how many principal components are used to reconstruct the de-noised line centers.  This $K$ needs to be large enough so that all variability in the spectrograph is captured.  Too large, however, and the reconstruction will incorporate noise, thereby defeating the purpose.
+
+We settled on a $K$ value of 6.  Figure \ref{fig:pcLfc} shows the first 6 principal components constructed using LFC lines.  In both cases there is clear structure in the first and second principal components.  The diagonal-banding structure seen in components 3, 5, and 6 we believe are capturing detector fabrication defects.  Components 3 and 4 show aberrant behavior on the edges of the two bluest orders, where lower signal results in more variation in the line fits.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{Figures/pcsLfc6.png}
+%\includegraphics[width=\textwidth]{Figures/pcsLfc6.pdf}
+\caption{The first six principal components constructed using only LFC lines.  There is clear structure for the first two principal components, though no order information is given to the PCA.  Principal components 3, 5 and 6 show some slight diagonal-banding structure, which we believe to be due to detector defects.  There is aberrant behavior in the bluest lines of the bluest two orders, which will be highlighted in the discussion.}
+\label{fig:pcLfc}
+\end{figure}
+
+In deciding a K value, we ran training-validation tests for K values spanning from 2 to 512.  One would expect the returned wavelengths to get increasingly more accurate with larger K until components that represent only noise are incorporated.  We found that the returned wavelengths are most accurate with a K value of 32.  However, the improvement is slight with K values greater than 6.  Comparisons of wavelengths returned by a K=6 model vs. a K=32 model show significant differences in less than 10, bluer lines.
+
+\subsection{Interpolation of $a_{nk}$ with Respect to Time}
+Figure \ref{fig:nightlyVariation} shows the amplitude of the first and second principal component with respect to time on the left.  Though the shape of the amplitudes with respect to time, a clear linear trend exists within each night.  This is shown by the right plots in Figure  \ref{fig:nightlyVariation}.  As the beginning-of-night and end-of-night calibration sets always include LFC exposures, we use a simple linear interpolation to interpolate principal component amplitudes with respect to time.
+
+\lz{Yeah, the right-figure is kind of a mess, isn't it?}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.56\textwidth]{Figures/pcA_lfc.png}
+\includegraphics[width=0.42\textwidth]{Figures/pcAs_byDay.png}
+\caption{Amplitude of the first two principal components show as a function of time (left) or fraction of a day (right).  Points mark the times at which we have calibration data.  Lines show the result of a linear interpolation.  Left: amplitudes as a function of time for both LFC (blue) and ThAr (green).  The top plot shows the amplitudes for the first principal component while the bottom plot shows the amplitudes for the second principal component.  The shape of the curves is similar regardless of calibration source.
+Right: amplitudes of the first two principal components determined by the LFC exposures only.  Here, exposures are grouped by day and plotted with respect to what time of day the exposure was taken.  A linear interpolation through all the LFC exposures taken in one day are shown as black line.  Points are colored by the MJD of the exposure.  For each day, the amplitude has been artificially offset by the median amplitude for that day so all days are roughly on the same scale.}
+\label{fig:nightlyVariation}
+\end{figure} 
+
+\subsection{Interpolation of Wavelengths with Respect to Pixel}
+Interpolation of wavelengths over pixel  is done order by order using a Piecewise Cubic Hermite Interpolating Polynomial (PCHIP) interpolator.  This interpolation incorporates the flexibility needed to model the changing dispersion of the spectrograph across an order along with any detector defects while also enforcing monotonicity.
+
+Due to the dispersion intrinsic to echelle spectrographs, the wavelength change between pixels is greater at greater wavelengths.  This means that the function of wavelength vs. pixel across an order will always be monotonically increasing and concave down everywhere.  Consequently, linear interpolation of this function will systematically give erroneously low values.
+
+A more classic cubic spline interpolation can run into issues with arc lines, which are irregularly spaced or even blended and so can appear very close together.  Very close lines cause huge deviations from the correct wavelengths, as seen in the green line of Figure \ref{fig:xinterp}..
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{Figures/intpx_tests.png}
+\caption{Results from different interpolation schemes over pixels.
+Left: resultant wavelength solutions generated using ThAr lines, shown as green points.  Different interpolation schemes are shown in different colors.  The largest deviation comes with the classic cubic spline (green).
+Right: histograms of residuals for each method when used to predict the wavelengths of LFC lines, shown as black, vertical lines.  The linear interpolation model (yellow) of this concave down relation is asymmetric with disproportionately positive residuals.  The popular cubic spline residuals (green) has very spread out residuals.  The residuals from an interpolation scheme that incorporates smoothing (blue) appear non-Gaussian with a plateau about zero.  Residuals from the PCHIP interpolator (orange) has the strongest peak at 0 and is roughly Gaussian.}
+\label{fig:xinterp}
+\end{figure} 
+
+These huge digressions can be avoided by allowing for some smoothing in the interpolation.  In Figure \ref{fig:xinterp}, we show an example in blue using scipy's Univarate Spline method.  While the result appears to follow the calibration lines much better, the smoothing ultimately causes larger residuals that are spatially correlated (Fig. \ref{fig:xinterp}, right).
+
+For all orders, the edges will be overestimated while the middle will be underestimated.  This indicates that the smoothing is causing the resultant wavelength solution to underestimate the curvature of the pixel-wavelength relation, resulting in similar issues as with an inflexible, parametric model.  This enforces a smoothness we have no reason to believe is true for the data.
+
+We instead turn to the PCHIP interpolator, which damps down huge deviations in the traditional cubic spline by requiring the resulting interpolated function to be monotonic.  This is a constraint we know is true from optics, since interpolation in the pixel direction is carried out order-by-order.  In Figure \ref{fig:xinterp} we show that using the PCHIP interpolator returns the lowest residuals.
+
+\subsection{Order of Interpolation}
+Why do we interpolate in time first and then in x?
+
+\lz{We talked about including this discussion, but there is no real reason for doing things in this order except it is quite a bit faster.}
+
 
 \section{Discussion} \label{sec:discussion}
-
-Practical statements?  How many exposures are needed to implement this method at all.  How often do exposures have to be taken throughout a night (unless that's too dependent on instrument stability)
+\lz{I feel like we have a lot of hopes for this discussion section, which is not matched by my understanding of how to structure this discussion section.  For now, I have just written brief snippets that address each of the notes I have of things we have said we want to include.}
 
 Generalization to etalon:
-All methods described here are easily adapted to use with an etalon or any other arc length for which a list of lines and their wavelengths can be constructed.
+All methods described here are easily adapted to use with an etalon or any other arc lamp for which a list of lines and their assigned wavelengths can be constructed.
 
-Self calibration idea:
-Once we define a calibration space that captures all possible degrees of freedom for a stabilized spectrograph, then all exposures taken with the spectrograph contain information about where the spectrograph lies in that space at the time of the exposure.  Meaning, a science exposure can be used to determine the current state of the instrument in this calibration space.  It would therefore be possible to self-calibrate science exposures without the use of an additional wavelength calibration source.
+Ability to vet for bad exposures:
+An advantage of using PCA on all LFC exposures and line positions is the ability to isolate exposures that exhibit unexpectedly large variation.  Such variation is likely to be captured by an early principal component.  Errant exposures will be singled out by a spike in the amplitude for just that principal component.  This allowed us to quickly find flawed LFC exposures, which otherwise would have required visual inspection of all 1200+ LFC exposures.
+
+Changes in instrument/change point detection:
+On the other hand, this same feature of using PCA can also be seen as a bug.  PCA is good at picking up on variation regardless of the source of the variation.  Any variation that breaks our assumption of an instrument that exists in only a low-dimensional calibration space will likely be captured by early principal components, which will no longer serve to denoise the calibration data.  We found that violations of this stability assumption typically manifests as change points in the principal component amplitudes with respect to time.
+
+Sensitivity to line-position fitting:
+The PCA will also be sensitive to variations in line fitting.  For example, if certain regions have lines of lower signal, variable background, or are otherwise harder to fit, any resultant variation in the returned line positions across different exposures will also be captured by any PCA.  High-fidelity line positions are essential to ensure the PCA is capturing variations in the spectrograph's calibration rather than changes in how well a line can be fit.
 
 Perfect degeneracy problem:
 With any wavelength solution, there is a perfect degeneracy between what is defined as the ``center of the line'' and the resultant wavelength solution.  If, for example, a cross correlation method is used to extract RVs from the data, a systematic difference may be introduced depending on the definition of the center of the line.  In principle, the best way to mitigate this error would be to use a calibration source that looks like a star.
 
+Self calibration idea:
+Once we define a calibration space that captures all possible degrees of freedom for a stabilized spectrograph, then all exposures taken with the spectrograph contain information about where the spectrograph lies in that space at the time of the exposure.  Meaning, a science exposure can be used to determine the current state of the instrument in this calibration space.  It would therefore be possible to self-calibrate science exposures without the use of an additional wavelength calibration source.
 
-How hard would it be to go bayesian?
+How hard would it be to go bayesian?  Description of other implementations of \name\ than what we did here?
 
 \end{document}
