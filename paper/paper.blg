@@ -4,8 +4,8 @@ The top-level auxiliary file: paper.aux
 The style file: aasjournal.bst
 Database file #1: paper.bib
 Warning--string name "espresso" is undefined
---line 692 of file paper.bib
-I was expecting a `,' or a `}'---line 693 of file paper.bib
+--line 746 of file paper.bib
+I was expecting a `,' or a `}'---line 747 of file paper.bib
  :    
  :    year = {in prep.},
 (Error may have been on previous line)
@@ -15,45 +15,45 @@ Warning--empty year in pepe2020; set to ????
 Warning--empty journal in pepe2020
 Warning--empty journal in plavchan2015
 Warning--empty publisher in probst2014
-You've used 20 entries,
+You've used 23 entries,
             3166 wiz_defined-function locations,
-            790 strings with 17837 characters,
-and the built_in function-call counts, 14765 in all, are:
-= -- 776
-> -- 1902
-< -- 5
-+ -- 626
-- -- 659
-* -- 1666
-:= -- 2926
-add.period$ -- 23
-call.type$ -- 20
-change.case$ -- 92
-chr.to.int$ -- 20
-cite$ -- 24
-duplicate$ -- 375
-empty$ -- 585
-format.name$ -- 677
-if$ -- 2762
+            813 strings with 18393 characters,
+and the built_in function-call counts, 16201 in all, are:
+= -- 902
+> -- 2008
+< -- 6
++ -- 662
+- -- 700
+* -- 1796
+:= -- 3183
+add.period$ -- 26
+call.type$ -- 23
+change.case$ -- 112
+chr.to.int$ -- 23
+cite$ -- 27
+duplicate$ -- 426
+empty$ -- 668
+format.name$ -- 721
+if$ -- 3053
 int.to.chr$ -- 1
 int.to.str$ -- 0
-missing$ -- 17
-newline$ -- 71
-num.names$ -- 80
-pop$ -- 127
+missing$ -- 20
+newline$ -- 80
+num.names$ -- 92
+pop$ -- 148
 preamble$ -- 1
-purify$ -- 92
+purify$ -- 112
 quote$ -- 0
-skip$ -- 335
+skip$ -- 379
 stack$ -- 0
-substring$ -- 397
+substring$ -- 454
 swap$ -- 42
 text.length$ -- 3
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 177
+type$ -- 204
 warning$ -- 4
-while$ -- 62
+while$ -- 74
 width$ -- 0
-write$ -- 218
+write$ -- 251
 (There was 1 error message)

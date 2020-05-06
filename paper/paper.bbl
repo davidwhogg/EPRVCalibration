@@ -37,6 +37,16 @@
 {Butler}, R.~P., {Vogt}, S.~S., {Laughlin}, G., {et~al.} 2017, \aj, 153, 208,
   \dodoi{10.3847/1538-3881/aa66ca}
 
+\bibitem[{{Cersullo} {et~al.}(2019){Cersullo}, {Coffinet}, {Chazelas}, {Lovis},
+  \& {Pepe}}]{cersullo2019}
+{Cersullo}, F., {Coffinet}, A., {Chazelas}, B., {Lovis}, C., \& {Pepe}, F.
+  2019, \aap, 624, A122, \dodoi{10.1051/0004-6361/201833852}
+
+\bibitem[{{Coffinet} {et~al.}(2019){Coffinet}, {Lovis}, {Dumusque}, \&
+  {Pepe}}]{coffinet2019}
+{Coffinet}, A., {Lovis}, C., {Dumusque}, X., \& {Pepe}, F. 2019, \aap, 629,
+  A27, \dodoi{10.1051/0004-6361/201833272}
+
 \bibitem[{{Fischer} {et~al.}(2016){Fischer}, {Anglada-Escude}, {Arriagada},
   {Baluev}, {Bean}, {Bouchy}, {Buchhave}, {Carroll}, {Chakraborty}, {Crepp},
   {Dawson}, {Diddams}, {Dumusque}, {Eastman}, {Endl}, {Figueira}, {Ford},
@@ -54,6 +64,10 @@
   {Sawyer}, {Szymkowiak}, {Davis}, {Muller}, \& {Santoro}}]{jurgenson2016}
 {Jurgenson}, C., {Fischer}, D., {McCracken}, T., {et~al.} 2016, in \procspie,
   Vol. 9908, Ground-based and Airborne Instrumentation for Astronomy VI, 99086T
+
+\bibitem[{{Lovis} \& {Pepe}(2007)}]{lovis2007}
+{Lovis}, C., \& {Pepe}, F. 2007, \aap, 468, 1115,
+  \dodoi{10.1051/0004-6361:20077249}
 
 \bibitem[{{Mayor} {et~al.}(2011){Mayor}, {Marmier}, {Lovis}, {Udry},
   {S{\'e}gransan}, {Pepe}, {Benz}, {Bertaux}, {Bouchy}, {Dumusque}, {Lo Curto},
