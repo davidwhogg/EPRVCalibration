@@ -5,12 +5,17 @@
 % -----------
 % - use \acronym and use \eprv, \lfc, and so on.
 
-\documentclass[12pt, onecolumn]{aastex63}
-\usepackage{xcolor}
-\newcommand{\lz}[1]{\textcolor{orange}{#1}}
+\documentclass[modern]{aastex63}
+\usepackage[ruled,vlined,norelsize]{algorithm2e}
 
-\usepackage[ruled,vlined]{algorithm2e}
-\usepackage{graphicx}
+% hogg dealing with his shit
+\addtolength{\topmargin}{-0.30in}
+\addtolength{\textheight}{0.70in}
+\renewcommand{\twocolumngrid}{} % hahaha!
+\setlength{\parindent}{1.1\baselineskip}
+\sloppy\sloppypar\raggedbottom\frenchspacing
+\shorttitle{excalibur: a wavelength-calibration model}
+\shortauthors{zhao, hogg, bedell, fischer}
 
 % typesetting words
 \newcommand{\project}[1]{\textsl{#1}}
@@ -21,17 +26,15 @@
 \newcommand{\lfc}{\acronym{LFC}}
 \newcommand{\code}[1]{\texttt{#1}}
 
+\newcommand{\lz}[1]{\textcolor{orange}{#1}}
+
 % math shih
 \newcommand{\mps}{\mathrm{m\,s^{-1}}}
 
-% margins and page setup, etc
-\addtolength{\textheight}{1.00in}
-\addtolength{\topmargin}{-0.50in}
-\sloppy\sloppypar\raggedbottom\frenchspacing
-
 \begin{document}
 \title{\name:
-A Non-Parametric, Hierarchical Wavelength-Calibration Model for a Precision Spectrograph}
+  A Non-Parametric, Hierarchical \\
+  Wavelength-Calibration Model for a Precision Spectrograph}
 
 \correspondingauthor{Lily Zhao}
 \email{lily.zhao@yale.edu}
@@ -51,7 +54,7 @@ A Non-Parametric, Hierarchical Wavelength-Calibration Model for a Precision Spec
 \author[0000-0003-2221-0861]{Debra A. Fischer}
 \affil{Yale University, 52 Hillhouse, New Haven, CT 06511, USA}
 
-\begin{abstract}
+\begin{abstract}\noindent%
 \name\ is a hierarchical, non-parametric framework for wavelength calibrating precision spectrographs.  This method capitalizes on recent hardware improvements in highly-stabilized, extreme-precision radial-velocity spectrographs.  With stabilized spectrographs, the full optical system and detectors can only vary within a tiny range of configurations.  This allows us to use all calibration data to determine the entire space of possible calibrations for a stabilized spectrograph.  A wavelength solution then need only pinpoint where in this low-dimensional calibration space the spectrograph exists.  \name\ also takes advantage of the development of laser-frequency combs or etalons, which generate a dense set of stable calibration points.  This density of points permits the freedom of a non-parametric wavelength solution that can match or adapt to any instrument or detector oddities, more so than any one polynomial.  We demonstrate the success of this method with data from the EXtreme PREcision Spectrograph, \expres, which includes a Menlo Systems laser frequency comb.  We find that \name\ returns more accurate wavelength predictions by more than a factor of 2 over classic, non-hierarchical, polynomial solutions.  Employing \name\ wavelengths on \expres\ RV measurements on HD 3651 reduced the RMS of a planet fit by \lz{blah}.
 \end{abstract}
 
