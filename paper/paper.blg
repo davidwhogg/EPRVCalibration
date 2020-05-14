@@ -4,10 +4,10 @@ The top-level auxiliary file: paper.aux
 The style file: aasjournal.bst
 Database file #1: paper.bib
 Warning--string name "espresso" is undefined
---line 746 of file paper.bib
-I was expecting a `,' or a `}'---line 747 of file paper.bib
+--line 766 of file paper.bib
+I was expecting a `,' or a `}'---line 767 of file paper.bib
  :    
- :    year = {in prep.},
+ :    year = 2020,
 (Error may have been on previous line)
 I'm skipping whatever remains of this entry
 Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
@@ -15,45 +15,45 @@ Warning--empty year in pepe2020; set to ????
 Warning--empty journal in pepe2020
 Warning--empty journal in plavchan2015
 Warning--empty publisher in probst2014
-You've used 23 entries,
+You've used 24 entries,
             3166 wiz_defined-function locations,
-            813 strings with 18393 characters,
-and the built_in function-call counts, 16201 in all, are:
-= -- 902
-> -- 2008
+            821 strings with 18657 characters,
+and the built_in function-call counts, 16750 in all, are:
+= -- 948
+> -- 2056
 < -- 6
-+ -- 662
-- -- 700
-* -- 1796
-:= -- 3183
-add.period$ -- 26
-call.type$ -- 23
-change.case$ -- 112
-chr.to.int$ -- 23
-cite$ -- 27
-duplicate$ -- 426
-empty$ -- 668
-format.name$ -- 721
-if$ -- 3053
++ -- 679
+- -- 719
+* -- 1848
+:= -- 3286
+add.period$ -- 27
+call.type$ -- 24
+change.case$ -- 121
+chr.to.int$ -- 24
+cite$ -- 28
+duplicate$ -- 443
+empty$ -- 695
+format.name$ -- 740
+if$ -- 3160
 int.to.chr$ -- 1
 int.to.str$ -- 0
-missing$ -- 20
-newline$ -- 80
-num.names$ -- 92
-pop$ -- 148
+missing$ -- 21
+newline$ -- 83
+num.names$ -- 96
+pop$ -- 157
 preamble$ -- 1
-purify$ -- 112
+purify$ -- 121
 quote$ -- 0
-skip$ -- 379
+skip$ -- 393
 stack$ -- 0
-substring$ -- 454
+substring$ -- 471
 swap$ -- 42
 text.length$ -- 3
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 204
+type$ -- 213
 warning$ -- 4
-while$ -- 74
+while$ -- 78
 width$ -- 0
-write$ -- 251
+write$ -- 262
 (There was 1 error message)
