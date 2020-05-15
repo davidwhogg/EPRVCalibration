@@ -44,6 +44,7 @@
 
 \author[0000-0002-3852-3590]{Lily Zhao}
 \affil{Yale University, 52 Hillhouse, New Haven, CT 06511, USA}
+\affil{Flatiron Institute, Simons Foundation, 162 Fifth Avenue, New York, NY 10010, USA}
 
 \author[0000-0003-2866-9403]{David W. Hogg}
 \affil{Center for Cosmology and Particle Physics, Department of Physics, New York University, 726 Broadway, New York, NY 10003, USA}
@@ -225,7 +226,11 @@ Histograms of the residuals for each of the above described polynomial, interpol
 \label{fig:resid2d}
 \end{figure}
 
-The residuals of the classic, polynomial wavelength solution is shown in the top plot of Figure \ref{fig:resid2d}.  There is a lot of vertical structure and some hints of a periodic, diagonal structure as well.  The residuals of the interpolation test for the same exposure is shown in the center plot of Figure \ref{fig:resid2d}.  There is no coherent structure here and smaller residuals.  This shows how the flexibility of an interpolated model can account for high-order detector defects, which emerged as structure in the residuals of the classic, smooth, polynomial-driven wavelength solution.  In the \expres\ data shown here, for example, the interpolated model accounted for \lz{detector effect STA will explain to us}.
+The residuals of the classic, polynomial wavelength solution is shown in the top plot of Figure \ref{fig:resid2d}.  There is a lot of vertical structure and some hints of a periodic, diagonal structure as well.  The residuals of the interpolation test for the same exposure is shown in the center plot of Figure \ref{fig:resid2d}.  There is no coherent structure here and smaller residuals.
+
+This shows how the flexibility of an interpolated model can account for high-order detector defects, which emerged as structure in the residuals of the classic, smooth, polynomial-driven wavelength solution.  In the \expres\ data shown here, for example, the interpolated model accounted for \lz{detector effect STA will explain to us}.  This same flexibility should similarly allow interpolated wavelength solutions to account for position errors in pixel image blocks for different detectors.
+
+Position errors in pixel image blocks.
 
 The bottom plot of Figure \ref{fig:resid2d} shows the residuals when ThAr exposures, which have much fewer and less regular lines than LFC exposures, are run through \name\ and used to predict wavelengths for the completely independent LFC exposures taken during the same range of time.  Over-plotted in black are the positions of the ThAr lines.
 
@@ -319,18 +324,19 @@ These huge digressions can be avoided by allowing for some smoothing in the inte
 
 We instead turn to the PCHIP interpolator, which damps down huge deviations in the traditional cubic spline by requiring the resulting interpolated function be monotonic.  This is a constraint we know is true for any one echelle order.  Though the PCHIP interpolator shows a similar issue as a classic cubic spline around the ThAr line blend at pixel 5300, the effect is much smaller and effects fewer pixels.  Figure \ref{fig:xinterp} shows that using the PCHIP interpolator returns the lowest residuals.  
 
-\subsection{Order of Interpolation}
-Why do we interpolate in time first and then in x?
-
-\lz{We talked about including this discussion, but there is no real reason for doing things in this order except it is a bit faster.}
-
 
 \section{Application to Other Spectrographs}
 \label{sec:others}
 We use \expres\ data here not because it is the optimal system for a method like \name, but because there is a strong need for good wavelength calibration in the EPRV community.  The applicability of \name\ to any one instrument is a detailed question of the kind of variance experienced by the spectrograph and calibration sources available, but we hope to provide some approximate benchmarks and diagnostics.
 
-\lz{placeholder, pending Friday discussion}
-To determine the needed line density, we systematically removed LFC lines from the \expres\ data and calculated the RMS of the returned wavelengths.  Figure \ref{fig:density} plots the increase in the scatter of the wavelengths returned by \name\ as a function of separation between lines.  Note, however, that the stability of the lines and their measured line centers quickly becomes the dominant error source in calibration lamps over the separation between lines.
+To determine the needed line density, we systematically removed LFC lines from the \expres\ data and calculated the RMS of the returned wavelengths for the removed lines.  Figure \ref{fig:density} plots the scatter of residuals of the wavelengths returned by \name\ as a function of separation between lines.  It gives an approximate estimation of the expected error between lines of different separation.  Note, however, that the stability of the lines and their measured line centers quickly becomes the dominant error source in calibration lamps over the separation between lines.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.5\textwidth]{Figures/lfcDensityTest.pdf}
+\caption{Scatter in residuals as a function of spacing between lines.  The residuals are the difference between the\name\ wavelengths and each line's theoretical wavelength in units of $\mps$.  The average line spacing is calculated using the average distance between LFC lines across its wavelength range.}
+\label{fig:density}
+\end{figure} 
 
 In terms of stability, \name\ should be adaptable to a wide range of instrument designs.  In truth, the amplitude of the variation matters little as long as all axes of variation can be captured by PCA or another dimensionality-reducing model.  Indeed, larger variations from less stabilized instruments might even make it easier for the PCA to identify these axes.
 
@@ -355,7 +361,9 @@ On the other hand, the ability of PCA to pick up on any and all variation, regar
 
 \name\ can be applied to any data that contains information about the calibration state of the spectrograph.  For example, though LFC and ThAr exposures are used as an example in this paper, \name\ would work exactly the same for an etalon or any other arc lamp with a list of lines and assigned wavelengths.
 
-Furthermore, once we have defined a calibration space that captures all possible degrees of freedom for a stabilized spectrograph, then all exposures taken with the spectrograph contains information about where the spectrograph is located within that calibration space.  Theoretically, tellurics, lines in science exposures, or just the trace positions themselves could also be used to determine the calibration state of an instrument, negating the need for any additional wavelength-calibration source beyond defining the calibration space.
+Incorporating calibration lines taken through a simultaneous fiber is trivial, especially if the simultaneous reference is also used while taking calibration images.  The calibration lines through the simultaneous fiber could simply be concatenated to the array of calibration lines run through the dimensionality reduction and de-noising step.  This not only allows the simultaneous calibration information to contribute to constructing the complete calibration space of the spectrograph, but also allows the simultaneous calibration information to uniquely pinpoint where the spectrograph is in that calibration space for any exposure, removing the need to interpolate the basis vector amplitudes.
+
+Once we have defined a calibration space that captures all possible degrees of freedom for a stabilized spectrograph, then all exposures taken with the spectrograph contains information about where the spectrograph is located within that calibration space.  Theoretically, tellurics, lines in science exposures, or just the trace positions themselves could also be used to determine the calibration state of an instrument, negating the need for any additional wavelength-calibration source beyond defining the calibration space.
 
 \lz{(Not sure where this belongs, honestly.)}  We caution that with any wavelength solution, there is a perfect degeneracy between what is defined as the ``center of the line'' and the resultant wavelength solution.  If, for example, a cross correlation method is used to extract RVs from the data, a systematic difference may be introduced depending on the definition of the center of the line.  In principle, the best way to mitigate this uncertainty would be to use a calibration source that looks like a star.
 
@@ -365,6 +373,8 @@ Furthermore, once we have defined a calibration space that captures all possible
 \software{SciPy library \citep{scipy}, NumPy \citep{numpy, numpy2}, Astropy \citep{astropy:2013,astropy:2018}.}
 
 \facilities{LDT}
+
+\acknowledgements{We thank the EXPRES team for their work on the instrument, software, and pipeline.  We thank Dan Forman-Mackey for illuminating discussion.  The data presented here made use of the Lowell Discovery Telescope at Lowell Observatory. Lowell is a private, non-profit institution dedicated to astrophysical research and public appreciation of astronomy and operates the LDT in partnership with Boston University, the University of Maryland, the University of Toledo, Northern Arizona University and Yale University. We gratefully acknowledge ongoing support for telescope time from Yale University, the Heising-Simons Foundation, and an anonymous donor in the Yale community. We especially thank the NSF for funding that allowed for precise wavelength calibration and software pipelines through NSF ATI-1509436 and NSF AST-1616086 and for the construction of EXPRES through MRI-1429365.  LLZ gratefully acknowledges support from the National Science Foundation Graduate Research Fellowship under Grant No. DGE1122492.}
 
 \bibliography{paper.bib}
 
