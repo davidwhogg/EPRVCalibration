@@ -15,45 +15,45 @@ Warning--empty year in pepe2020; set to ????
 Warning--empty journal in pepe2020
 Warning--empty journal in plavchan2015
 Warning--empty publisher in probst2014
-You've used 24 entries,
+You've used 25 entries,
             3166 wiz_defined-function locations,
-            821 strings with 18657 characters,
-and the built_in function-call counts, 16750 in all, are:
-= -- 948
-> -- 2056
-< -- 6
-+ -- 679
-- -- 719
-* -- 1848
-:= -- 3286
-add.period$ -- 27
-call.type$ -- 24
-change.case$ -- 121
-chr.to.int$ -- 24
-cite$ -- 28
-duplicate$ -- 443
-empty$ -- 695
-format.name$ -- 740
-if$ -- 3160
+            825 strings with 18816 characters,
+and the built_in function-call counts, 17033 in all, are:
+= -- 974
+> -- 2068
+< -- 7
++ -- 683
+- -- 722
+* -- 1864
+:= -- 3342
+add.period$ -- 29
+call.type$ -- 25
+change.case$ -- 125
+chr.to.int$ -- 25
+cite$ -- 29
+duplicate$ -- 457
+empty$ -- 719
+format.name$ -- 744
+if$ -- 3217
 int.to.chr$ -- 1
 int.to.str$ -- 0
 missing$ -- 21
-newline$ -- 83
-num.names$ -- 96
-pop$ -- 157
+newline$ -- 87
+num.names$ -- 100
+pop$ -- 161
 preamble$ -- 1
-purify$ -- 121
+purify$ -- 125
 quote$ -- 0
-skip$ -- 393
+skip$ -- 404
 stack$ -- 0
-substring$ -- 471
+substring$ -- 478
 swap$ -- 42
 text.length$ -- 3
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 213
+type$ -- 222
 warning$ -- 4
-while$ -- 78
+while$ -- 81
 width$ -- 0
-write$ -- 262
+write$ -- 273
 (There was 1 error message)
