@@ -35,6 +35,11 @@ Aminikhanghahi, S., \& Cook, D.~J. 2017, Knowledge and Information Systems, 51,
 {Bonfils}, X., {Delfosse}, X., {Udry}, S., {et~al.} 2013, \aap, 549, A109,
   \dodoi{10.1051/0004-6361/201014704}
 
+\bibitem[{{Butler} {et~al.}(1996){Butler}, {Marcy}, {Williams}, {McCarthy},
+  {Dosanjh}, \& {Vogt}}]{butler1996}
+{Butler}, R.~P., {Marcy}, G.~W., {Williams}, E., {et~al.} 1996, \pasp, 108,
+  500, \dodoi{10.1086/133755}
+
 \bibitem[{{Butler} {et~al.}(2017){Butler}, {Vogt}, {Laughlin}, {Burt},
   {Rivera}, {Tuomi}, {Teske}, {Arriagada}, {Diaz}, {Holden}, \&
   {Keiser}}]{butler2017}
@@ -100,9 +105,6 @@ Aminikhanghahi, S., \& Cook, D.~J. 2017, Knowledge and Information Systems, 51,
 \bibitem[{Oliphant(2006--)}]{numpy}
 Oliphant, T. 2006--, {NumPy}: A guide to {NumPy}, USA: Trelgol Publishing.
 \newblock \url{http://www.numpy.org/}
-
-\bibitem[{{Pepe}(????)}]{pepe2020}
-{Pepe}, F. ????
 
 \bibitem[{{Pepe} {et~al.}(2013){Pepe}, {Cristiani}, {Rebolo}, {Santos},
   {Dekker}, {M{\'e}gevand}, {Zerbi}, {Cabral}, {Molaro}, {Di Marcantonio},
@@ -171,6 +173,26 @@ Plavchan, P., Latham, D., Gaudi, S., {et~al.} 2015
 {Schwab}, C., {Rakich}, A., {Gong}, Q., {et~al.} 2016, in \procspie, Vol. 9908,
   Ground-based and Airborne Instrumentation for Astronomy VI, 99087H
 
+\bibitem[{{Su{\'a}rez Mascare{\~n}o} {et~al.}(2020){Su{\'a}rez Mascare{\~n}o},
+  {Faria}, {Figueira}, {Lovis}, {Damasso}, {Gonz{\'a}lez Hern{\'a}ndez},
+  {Rebolo}, {Cristiano}, {Pepe}, {Santos}, {Zapatero Osorio}, {Adibekyan},
+  {Hojjatpanah}, {Sozzetti}, {Murgas}, {Abreo}, {Affolter}, {Alibert},
+  {Aliverti}, {Allart}, {Allende Prieto}, {Alves}, {Amate}, {Avila}, {Baldini},
+  {Bandi}, {Barros}, {Bianco}, {Benz}, {Bouchy}, {Broeng}, {Cabral},
+  {Calderone}, {Cirami}, {Coelho}, {Conconi}, {Coretti}, {Cumani}, {Cupani},
+  {D'Odorico}, {Deiries}, {Delabre}, {Di Marcantonio}, {Dumusque},
+  {Ehrenreich}, {Fragoso}, {Genolet}, {Genoni}, {G{\'e}nova Santos}, {Hughes},
+  {Iwert}, {Ferber}, {Knusdrtrup}, {Landoni}, {Lavie}, {Lillo-Box}, {Lizon},
+  {Lo Curto}, {Maire}, {Manescau}, {Martins}, {M{\'e}gevand}, {Mehner},
+  {Micela}, {Modigliani}, {Molaro}, {Monteiro}, {Monteiro}, {Moschetti},
+  {Mueller}, {Nunes}, {Oggioni}, {Oliveira}, {Pall{\'e}}, {Pariani},
+  {Pasquini}, {Poretti}, {Rasilla}, {Redaelli}, {Riva}, {Santana Tschudi},
+  {Santin}, {Santos}, {Segovia}, {Sosnoswska}, {Sousa}, {Span{\`o}}, {Tenegi},
+  {Udry}, {Zanutta}, \& {Zerbi}}]{mascareno2020}
+{Su{\'a}rez Mascare{\~n}o}, A., {Faria}, J.~P., {Figueira}, P., {et~al.} 2020,
+  arXiv e-prints, arXiv:2005.12114.
+\newblock \doarXiv{2005.12114}
+
 \bibitem[{{van der Walt} {et~al.}(2011){van der Walt}, {Colbert}, \&
   {Varoquaux}}]{numpy2}
 {van der Walt}, S., {Colbert}, S.~C., \& {Varoquaux}, G. 2011, Computing in
@@ -185,6 +207,11 @@ Plavchan, P., Latham, D., Gaudi, S., {et~al.} 2015
   {Contributors}}]{scipy}
 {Virtanen}, P., {Gommers}, R., {Oliphant}, T.~E., {et~al.} 2020, Nature
   Methods, 17, 261, \dodoi{https://doi.org/10.1038/s41592-019-0686-2}
+
+\bibitem[{{Wang} {et~al.}(2020){Wang}, {Wright}, {MacQueen}, {Cochran}, {Doss},
+  {Gibson}, \& {Schmitt}}]{wang2020}
+{Wang}, S.~X., {Wright}, J.~T., {MacQueen}, P., {et~al.} 2020, \pasp, 132,
+  014503, \dodoi{10.1088/1538-3873/ab5021}
 
 \bibitem[{{Wikipedia contributors}(2020)}]{wiki_pca}
 {Wikipedia contributors}. 2020, Principal component analysis --- {W}ikipedia{,}
