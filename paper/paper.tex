@@ -125,7 +125,7 @@ and the $g_k(\lambda,m)$ are basis functions expressing the ``directions'' in ca
 
 The challenge is to learn these basis functions from the data and get the $K$ amplitudes, $a_{nk}$, for every exposure $n$.  There are many ways to discern these basis functions.  In this paper, we present a model using principal component analysis (PCA) \citep{wiki_pca}.  A PCA is justifiable \lz{(Hogg)} in the limit where there is very high signal-to-nose ratio, as is usually the case with typical calibration images.  There are many alternatives to PCA for this dimensionality reduction; we return to this point in Section \ref{sec:choices} below.
 
-\begin{figure*}[h]
+\begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{Figures/methodCartoon.pdf}
 \caption{A cartoon representation of the \name\ method, as described in Section \ref{sec:method}.  We enlarge variations in measured line position, changes in calibration space, and interpolation deviations for clarity.  In step one, dimensionality reduction and denoising (\textsection \ref{sec:denoising}), the complete set of line positions for all exposures is analyzed to return a set of $K$ basis vectors, $g_n$, which represent different ways the spectrograph calibration changes.  These basis vectors span the $K$-dimensional calibration space of the spectrograph, which includes all possible wavelength solutions.  In step two (\textsection \ref{sec:interp_time}), \name\ interpolates the amplitudes of each basis vector, $a_n,k$, to return the calibration state for a specific science exposure, returned as a set of de-noised calibration lines.  The assigned wavelengths of these de-noised line positions are then interpolated onto other pixels in step three (\textsection \ref{sec:interp_wsol}) to construct a full wavelength model that returns wavelength as a function of detector position $x$ and echelle order $m$.}
@@ -218,16 +218,14 @@ RMS/line \: [m\,s^{-1}] = \sqrt{\sum_{n=1}^N\sum_{p=1}^P\frac{[ \frac{(\lambda_{
 \end{equation}
 where $\lambda_{p,theoretical}$ is the theoretical wavelength for line $p$, $\lambda_{n,p,predicted}$ is the wavelength predicted by the constructed wavelength solution for line $p$ in exposure $n$, and residuals from all $P$ lines from all $N$ exposures are used, for a total of $N \times P$ lines.  The difference in wavelength is converted to units of $\mps$, a more intuitive metric for \eprv\ work.
 
-Histograms of the per-line residuals for each of the above described polynomial, interpolation, and denoising tests (respectively) are shown in Figure \ref{fig:testHists}.  Note that the spread in residuals is much smaller for both the denoising and interpolation tests relative to the results of the polynomial wavelength solution.
-
-\begin{figure}[h]
+\begin{figure}[t]
 \centering
 \includegraphics[width=.6\textwidth]{Figures/all_results.pdf}
 \caption{Difference in predicted and theoretical wavelengths for the wavelength calibration tests described in Section \ref{sec:tests}.  The per line RMS as defined in Equation \ref{eq:rms} is given in the top-right corner in each method's corresponding color.  \name\ returns the smallest spread in residuals.}
 \label{fig:testHists}
 \end{figure} 
 
-\name -generated wavelengths also exhibit less structure in the returned residuals.  For a randomly selected example LFC exposure, Figure \ref{fig:resid2d} plots each line with respect to its echelle order (y-axis) and x-pixel on the detector (x-axis) colored by the difference between the predicted and theoretical wavelength for that line in units of $\mps$.
+Histograms of the per-line residuals for each of the above described polynomial, interpolation, and denoising tests (respectively) are shown in Figure \ref{fig:testHists}.  Note that the spread in residuals is much smaller for both the denoising and interpolation tests relative to the results of the polynomial wavelength solution.
 
 \begin{figure}[t]
 \centering
@@ -236,6 +234,8 @@ Histograms of the per-line residuals for each of the above described polynomial,
 \caption{Residuals of a single LFC exposure plotted with respect to detector position (as defined by echelle order and x-pixel) for parametric and non-parametric wavelength calibration methods.  Each line is colored by the difference between the predicted wavelength and the theoretical wavelength for each line, given in units of $\mps$.  \textbf{Top}: residuals to a classic, polynomial fit.  \textbf{Bottom}: residuals to an interpolated wavelength solution.  High-order structure, i.e. vertical stripes and patchiness, is apparent in the residuals to a polynomial wavelength solution, which assumes smoothness.  The increased flexibility of the interpolated wavelength solution can account for this high-order structure, resulting in much smaller residuals with less spatial coherence.}
 \label{fig:resid2d}
 \end{figure}
+
+\name -generated wavelengths also exhibit less structure in the returned residuals.  For a randomly selected example LFC exposure, Figure \ref{fig:resid2d} plots each line with respect to its echelle order (y-axis) and x-pixel on the detector (x-axis) colored by the difference between the predicted and theoretical wavelength for that line in units of $\mps$.
 
 The residuals of the classic, polynomial wavelength solution is shown in the top plot of Figure \ref{fig:resid2d}.  There is a lot of vertical structure and some hints of a periodic, diagonal structure as well.  The residuals of the interpolation test for the same exposure is shown in the bottom plot of Figure \ref{fig:resid2d}.  There is no coherent structure here and smaller residuals.
 
@@ -279,7 +279,7 @@ The implementation of \name\ presented here, using PCA for denoising and interpo
 \label{sec:choice_k}
 The value of $K$ represents the dimensionality of the calibration space within which the spectrograph lives.  In practice, it is the number of principal components, or basis vectors, used to reconstruct the de-noised line centers.  $K$ needs to be large enough so that all variability in the spectrograph is captured.  Too large, however, and the reconstruction will begin to incorporate noise, thereby defeating the purpose.
 
-\begin{figure}[t]
+\begin{figure}[h]
 \centering
 \includegraphics[width=.5\textwidth]{Figures/kvals_all.pdf}
 \caption{Per-line RMS of returned wavelength models for different values of $K$.  Per-line RMS is defined in Equation \ref{eq:rms} and provides a measure of the accuracy of a wavelength model.  There is a dotted, vertical line at $K=6$, our chosen $K$ value.  The dotted, horizontal line is the RMS for $K=6$.  The improvement at around $K=6$ plateaus.}
@@ -297,12 +297,12 @@ The value of $K$ represents the dimensionality of the calibration space within w
 In deciding a $K$ value, we ran denoising tests, as described in Section \ref{sec:tests}, for $K$ values spanning from 2 to 512.  The resultant per-line RMS for each test is plotted in Figure \ref{fig:kvals}.  One would expect the returned wavelengths to get increasingly more accurate with larger $K$ until components that represent only noise are incorporated.  Residuals might then get worse before ultimately starting to get better again with large $K$, which marks the model over-fitting the data.  Though the returned RMS never gets worse, we find that the improvement plateaus between $K=6$ and $K=128$.  Comparisons of wavelengths returned by a $K=6$ model vs. a $K=32$ model show significant differences in less than 10 bluer lines, which are known to have greater error and variance in their measured line positions.  We therefore settled on a $K$ value of six.
 
 Figure \ref{fig:pcLfc} shows the fiducial calibration state and the first 9 principal components constructed using LFC lines, which represent deviations from the fiducial calibration state.  There is clear structure in the first and second principal components.  Components three through six show smaller or more localized structure.  Components three and four have aberrant behavior on the edges of the two bluest echelle orders, where lower signal results in more variation in the line fits.  Later principal components become dominated by noise and show less coherent structure.
-
-\subsection{Interpolation of Calibration State with Respect to Time}
+\pagebreak
+\subsection{Interpolation of Calibration State to Science Exposures}
 \label{sec:choice_avt}
 Figure \ref{fig:nightlyVariation} shows the amplitude of the first and second principal component with respect to time on the left.  Though there exists a complex overall shape to the amplitudes with respect to time, a clear linear trend exists within each night.  This is shown by the right plots in Figure  \ref{fig:nightlyVariation}.  As the beginning-of-night and end-of-night calibration sets always include LFC exposures, we use a simple linear interpolation to interpolate principal component amplitudes with respect to time.
 
-\begin{figure*}[b]
+\begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{Figures/pcAs_byDay.png}
 \caption{Amplitude of the first two principal components shown as a function of time (left) or hour from midnight (right).  The top row of plots shows the amplitudes for the first principal component while the bottom row shows the amplitudes for the second principal component.  Lines show the result of a linear interpolation.  In the top, right plot, the temperature of the optical bench is also plotted in orange.  In the right plot, the principal component amplitudes have been artificially offset by the median amplitude for each night.  All days are therefore roughly on the same scale, but the y-axis is different from the left plots.  In the right column, points are colored by the MJD of each exposure.}
@@ -324,7 +324,7 @@ A simple linear interpolation would give erroneously low values everywhere.  Due
 
 A more classic cubic spline interpolation can run into issues with arc lines, which are irregularly spaced or even blended.  Close lines appearing at virtually the same pixel location but with different wavelengths could coerce a cubic spline into a very high slope, as with the green curve in Figure \ref{fig:xinterp}.  A line blend appears at approximately pixel 5300, causing the spline to twist to nearly vertical to account for both points.  This leads to huge deviations from the correct wavelengths around this line blend as the extraneously high slope of the spline is accounted for.
 
-\begin{figure*}[h]
+\begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{Figures/intpx_tests.png}
 \caption{Residuals from different interpolation schemes over pixels in echelle order 100.  ThAr lines, shown as blue circles, are used to construct a wavelength solution that is then evaluated at each LFC line, shown as blue lines.  The residuals of each wavelength solution for a subset of the order is shown on the left.  Histograms of the residuals for each method for the complete order is shown on the right.  Here, the y-axis is zoomed in to show the shape of each histogram more clearly.  Note: there is a blended ThAr line at approximately pixel 5300, the last ThAr line plotted.}
@@ -340,7 +340,9 @@ We instead turn to the PCHIP interpolator, which damps down huge deviations in t
 \label{sec:others}
 We focus on an \eprv\ use-case here, because there is a strong need for wavelength calibration in the \eprv\ community.  \expres\ is representative of the newest generation of \eprv\ spectrographs, and an LFC provides stable, dense calibration lines with known wavelengths, ideal for \name.  The applicability of \name\ to any one instrument is a detailed question of the kind of variance experienced by the spectrograph and calibration sources available, but we hope to provide some approximate benchmarks and diagnostics.
 
-To determine the needed line density, we systematically removed LFC lines from the \expres\ data and calculated the RMS of the returned wavelengths for the removed lines.  Figure \ref{fig:density} plots the scatter of residuals of the wavelengths returned by \name\ as a function of separation between lines in units of resolution element.  It gives an approximate estimation of the expected error between lines of different separation.  Note, however, that the stability of the lines and their measured line centers quickly becomes the dominant error source in calibration lamps over the separation between lines.  The needed line density depends on the resolution of a given spectrograph and the needed precision of the returned wavelength solution.
+Implementing \name\ will require an existing library of calibration exposures that span the range of calibration space accessible by the spectrograph, or at least the space accessed by the science exposures being calibrated.  A new set of calibration exposures would be needed for any changes to the instrument that could significantly change the calibration space.  While there is no exact cutoff for how many exposures are needed, the number is certainly much larger than $K$, the dimensionality of the calibration space.  More calibration exposures will help with denoising .  The number of calibration exposures required throughout a night will depend on how much the instrument varies throughout the night, and the chosen interpolation scheme, as mentioned in Section \ref{sec:choice_avt}.
+
+As an empirical assessment of the needed line density, we systematically removed LFC lines from the \expres\ data and calculated the per-line RMS of the returned wavelengths for the removed lines.  Figure \ref{fig:density} plots the scatter of residuals of the wavelengths returned by \name\ as a function of separation between lines in units of resolution element.  It gives an approximate estimation of the expected error between lines of different separation.  Note, however, that the stability of the lines and their measured line centers quickly becomes the dominant error source in calibration lamps over the separation between lines.  The needed line density depends on the resolution of a given spectrograph and the needed precision of the returned wavelength solution.
 
 \begin{figure}[h]
 \centering
@@ -363,10 +365,6 @@ In terms of dimensionality reduction, most physical systems should have only a f
 
 It could still be possible to run \name\ on a spectrograph that has a high-dimensional calibration space, meaning a large number of basis vectors is required to capture all the variance in the spectrograph.  In this regime, there is always the risk of over-fitting.  Regularizing the principal component amplitudes, for example insisting the amplitudes for higher principal components be smaller, can help to return reasonable models \citep{formanmackey2015} .  Within such a framework, \name\ may still deliver good results.
 \lz{Hogg: My notes said you might want to add more things here?}
-
-\lz{I completely made up the below paragraph...}
-
-The number of calibration exposures needed is linked to the amount of variability in the instrument.  Calibration exposures must span the range of calibration space accessible by the spectrograph, or at least accessed by the science calibrations that require wavelength solutions.  Otherwise, the dimensionality-reduction method will not have the information required to construct a basis vector that spans the entire accessible calibration space.  More observations are always better to help de-noise the calibration data.
 
 For the results presented here, the data was broken up into different eras of stability based on where the principal component amplitudes showed huge deviations.  This was done visually, though there exists many change-point detection algorithms that could be used \citep{aminikhanghahi2017}.  There is a trade-off in including more exposures between introducing greater variation, but also more data to offer constraints that may be optimized.  Here, an era of stability was chosen  manually in order to focus on separating out time-domain intervals in which the data is relatively homogeneous, e.g. most exposures show the same calibration lines.  Homogeneity is, of course, implicitly required when implementing PCA.
 
