@@ -27,7 +27,7 @@
 \newcommand{\eprv}{\acronym{EPRV}}
 \newcommand{\lfc}{\acronym{LFC}}
 \newcommand{\code}[1]{\texttt{#1}}
-\newcommand{\target}{HD $\bigstar$}
+\newcommand{\target}{HD 34411}
 
 \newcommand{\lz}[1]{\textcolor{orange}{#1}}
 \newcommand{\mb}[1]{\textcolor{violet}{#1}}
@@ -48,8 +48,8 @@
 \affil{Flatiron Institute, Simons Foundation, 162 Fifth Avenue, New York, NY 10010, USA}
 
 \author[0000-0003-2866-9403]{David W. Hogg}
-\affil{Flatiron Institute, Simons Foundation, 162 Fifth Avenue, New York, NY 10010, USA}
 \affil{Center for Cosmology and Particle Physics, Department of Physics, New York University, 726 Broadway, New York, NY 10003, USA}
+\affil{Flatiron Institute, Simons Foundation, 162 Fifth Avenue, New York, NY 10010, USA}
 \affil{Center for Data Science, New York University, 60 Fifth Avenue, New York, NY 10011, USA}
 \affil{Max-Planck-Institut für Astronomie, Königstuhl 17, D-69117 Heidelberg, Germany}
 
@@ -60,7 +60,7 @@
 \affil{Yale University, 52 Hillhouse, New Haven, CT 06511, USA}
 
 \begin{abstract}\noindent%
-\name\ is a non-parametric, hierarchical framework for precision wavelength-calibration of spectrographs.  This method is designed with the needs of extreme-precision radial velocity (\eprv) in mind, which require that instruments be calibrated or stabilized to better than $10^{-4}$ of a pixel.  Instruments are likely to vary along only a few dominant degrees of freedom, especially \eprv\ instruments with highly stabilized optical systems and detectors.  \name\ takes advantage of this property by using all calibration data to construct a low-dimensional space of all possible calibrations for an instrument.  \name\ also takes advantage of the development of laser-frequency combs or etalons, which generate a dense set of stable calibration points.  This density of calibration lines permits the freedom of a non-parametric wavelength solution that can match or adapt to any instrument or detector oddities, more so than any parametric model.  We demonstrate the success of this method with data from the \textsl{EXtreme PREcision Spectrograph}, \expres, which includes a laser frequency comb.  Using \name\ wavelengths to predict the wavelengths of known calibration lines returns smaller per-line RMS by a factor of 5 when compared to a classic wavelength solution that is constructed using polynomials and treats each exposure individually .  Employing \name\ wavelengths on \expres\ RV measurements of HD 3651 reduced the RMS of a planet fit by \lz{blah}.
+\name\ is a non-parametric, hierarchical framework for precision wavelength-calibration of spectrographs.  This method is designed with the needs of extreme-precision radial velocity (\eprv) in mind, which require that instruments be calibrated or stabilized to better than $10^{-4}$ of a pixel.  Instruments vary along only a few dominant degrees of freedom, especially \eprv\ instruments with highly stabilized optical systems and detectors.  \name\ takes advantage of this property by using all calibration data to construct a low-dimensional representation of all possible calibration states for an instrument.  \name\ also takes advantage of laser-frequency combs or etalons, which generate a dense set of stable calibration points.  This density permits the use of a non-parametric wavelength solution that can adapt to any instrument or detector oddities, more than any parametric model.  We demonstrate the success of this method with data from the \textsl{EXtreme PREcision Spectrograph} (\expres), which includes a laser frequency comb.  \name\ wavelengths predicts the wavelengths of known calibration lines at smaller per-line RMS by a factor of $\sim$5 when compared to a classic, polynomial wavelength calibration that treats each exposure individually.  For ten months of radial-velocity measurements of HD 34411, using \name\ wavelengths reduced the RMS of the complete data set from $1.22\, \mps$ to $1.05\, \mps$; this improvement is equivalent to reducing the wavelength term in the error budget by $0.62\,\mps$.
 \end{abstract}
 
 
@@ -78,7 +78,7 @@ This recommends a calibration methodology that is \emph{non-parametric}, or not 
 
 The second simple idea follows from the observation that most physical systems have only a few dominant degrees of freedom, meaning most spectrographs vary along only a small number of axes in ``calibration space'', or the (very high-dimensional) space of all possible wavelength solutions.  This is particularly likely with the latest generation of \eprv\ instruments that are equipped with stringent environmental stabilizing, likely reducing the number and extent of the axes along which the instrument can vary.  That is, spectrographs, especially stabilized ones, should have few environmentally accessible degrees of freedom.  This renders it inadvisable to fit each calibration exposure or calibrate each science exposure independently.  Instead, all the calibration data (or all the data) should be used to determine the calibration space in which the instrument can and does vary.  Subsequent calibration work then need only determine where in the small, accessible part of calibration space the spectrograph was located for each exposure.
 
-In the context of probabilistic models, this structure is \emph{hierarchical}:  The calibration data are used not just to determine the wavelength solution at one moment, but also to determine the possible \emph{calibration space} of wavelength solutions at all moments.  In the statistics literature, this concept is often described as \emph{de-noising}:  we can improve calibration by recognizing that every calibration exposure contains information about every other calibration exposure.  Thus every exposure can be improved (i.e., de-noised) with information from every other exposure.
+In the context of probabilistic models, this structure is \emph{hierarchical}:  The calibration data are used not just to determine the wavelength solution at one moment, but also to determine the possible \emph{calibration space} of wavelength solutions at all moments.  In statistics, this concept is often described as \emph{de-noising}:  we can improve calibration by recognizing that every calibration exposure contains information about every other calibration exposure.  Thus every exposure can be improved (i.e., de-noised) with information from every other exposure.
 
 The method we propose here---\name---embodies these ideas.
 It is a non-parametric, hierarchical, data-driven method to generate a wavelength model.  By being non-parametric, it delivers enormous freedom to the wavelength solution to match or adapt to any instrument or detector oddities.  By being hierarchical, it restricts that freedom tremendously, but it does so appropriately for the empirically determined variations in the stabilized spectrograph.
@@ -127,7 +127,7 @@ The challenge is to learn these basis functions from the data and get the $K$ am
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{Figures/methodCartoon.pdf}
-\caption{A cartoon representation of the \name\ method, as described in Section \ref{sec:method}.  We enlarge variations in measured line position, changes in calibration space, and interpolation deviations for clarity.  In step one, dimensionality reduction and denoising (\textsection \ref{sec:denoising}), the complete set of line positions for all exposures is analyzed to return a set of $K$ basis vectors, $g_n$, which represent different ways the spectrograph calibration changes.  These basis vectors span the $K$-dimensional calibration space of the spectrograph, which includes all possible wavelength solutions.  In step two (\textsection \ref{sec:interp_time}), \name\ interpolates the amplitudes of each basis vector, $a_n,k$, to return the calibration state for a specific science exposure, returned as a set of de-noised calibration lines.  The assigned wavelengths of these de-noised line positions are then interpolated onto other pixels in step three (\textsection \ref{sec:interp_wsol}) to construct a full wavelength model that returns wavelength as a function of detector position $x$ and echelle order $m$.}
+\caption{A cartoon representation of the \name\ method, as described in Section \ref{sec:method}.  We exaggerate variations in measured line position, changes in calibration space, and interpolation deviations for clarity.  In step one, dimensionality reduction and denoising (\textsection \ref{sec:denoising}), the complete set of line positions for all exposures is analyzed to return a set of $K$ basis vectors, $g_n$, which represent different ways the spectrograph calibration changes.  These basis vectors span the $K$-dimensional calibration space of the spectrograph, which includes all possible wavelength solutions.  In step two (\textsection \ref{sec:interp_time}), \name\ interpolates the amplitudes of each basis vector, $a_n,k$, to return the calibration state for a specific science exposure, returned as a set of de-noised calibration lines.  The assigned wavelengths of these de-noised line positions are then interpolated onto other pixels in step three (\textsection \ref{sec:interp_wsol}) to construct a full wavelength model that returns wavelength as a function of detector position $x$ and echelle order $m$.}
 \label{fig:cartoon}
 \end{figure*} 
 
@@ -257,10 +257,17 @@ Figure \ref{fig:waveResids} plots the residuals for a subset of order 94 for bot
 The move to an interpolated wavelength solution is driven by the assumption that a high density of calibration lines allows for more freedom in the resultant wavelength solution.  This freedom allows the wavelength solution to more accurately ascribe wavelengths.  This flexibility, however, is no longer justified in the regime where there are large separations between calibration lines, as this no longer provide sufficient constraint on the interpolated wavelength solution, as is the case in some regions of a classic ThAr lamp.
 
 \subsection{Impact on Radial Velocity Measurements}\label{sec:test-rv}
-We tested the effect of \name -generated wavelengths on RV measurements using \expres\ observations of \target.  \target\ is a BLANK star and also SOME STATEMENT ON SUSPECTED ACTIVITY(?).  We used BLANK observations of \target\ taken between BLANK and BLANK with an average signal-to-noise ratio of BLANK PROBABLY 250.  Radial velocity mesurements are derived using a chunk-by-chunk, forward-modeling algorithm employed by \expres's pipeline \citep{petersburg2020}.
 
-Figure \ref{fig:rvs} compares the resultant RVs when using a classic, ninth-degree polynomial wavelength solution and an \name -generated wavelength model.
-\lz{Awaiting latest extraction run...}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{Figures/rvs.pdf}
+\caption{HD 34411 RVs with \expres.  RVs derived using the classic, polynomial-based wavelength solution are plotted in blue.  RVs derived using the implementation of \name\ presented in this paper are shown in orange.  The mean of each data set is shown as a horizontal line while $\pm$ one standard deviation from this mean is shaded in each data set's respective color.}
+\label{fig:rvs}
+\end{figure*}
+
+We tested \name -generated wavelengths on RV measurements using \expres\ observations of \target.  \target\ is a G0V star.  It is a $4.8\, Gyr$ star and relatively quiet ($log R'_{HK} = -5.09$) \citep{brewer2016}.  We used 114 observations of \target\ taken between Oct. 8, 2019 and Aug. 13, 2020 with SNR 250.  Radial-velocity measurements were derived using the chunk-by-chunk, forward-modeling algorithm employed by \expres's pipeline \citep{petersburg2020}.
+
+Figure \ref{fig:rvs} compares the resultant RVs when using a classic, ninth-degree polynomial wavelength solution and an \name -generated wavelength model.  Using \name -generated wavelengths reduces the RMS of the entire data set from $1.22\, \mps$ with the classic wavelength solution to $1.05\, \mps$.  This is equivalent to removing an independent, additive noise component of $0.62\, \mps \,(=\sqrt{1.22^2-1.05^2})$.  Other data sets showed a reduction in scatter between $0.62-0.80\, \mps$.
 
 
 \section{Choose Your Own Implementation} \label{sec:choices}
@@ -296,7 +303,7 @@ The value of $K$ represents the dimensionality of the calibration space within w
 In deciding a $K$ value, we ran denoising tests, as described in Section \ref{sec:tests}, for $K$ values spanning from 2 to 512.  The resultant per-line RMS for each test is plotted in Figure \ref{fig:kvals}.  One would expect the returned wavelengths to get increasingly more accurate with larger $K$ until components that represent only noise are incorporated.  Residuals might then get worse before ultimately starting to get better again with large $K$, which marks the model over-fitting the data.  Though the returned RMS never gets worse, we find that the improvement plateaus between $K=6$ and $K=128$.  Comparisons of wavelengths returned by a $K=6$ model vs. a $K=32$ model show significant differences in less than 10 bluer lines, which are known to have greater error and variance in their measured line positions.  We therefore settled on a $K$ value of six.
 
 Figure \ref{fig:pcLfc} shows the fiducial calibration state and the first 9 principal components constructed using LFC lines, which represent deviations from the fiducial calibration state.  There is clear structure in the first and second principal components.  Components three through six show smaller or more localized structure.  Components three and four have aberrant behavior on the edges of the two bluest echelle orders, where lower signal results in more variation in the line fits.  Later principal components become dominated by noise and show less coherent structure.
-\pagebreak
+
 \subsection{Interpolation of Calibration State to Science Exposures}
 \label{sec:choice_avt}
 Figure \ref{fig:nightlyVariation} shows the amplitude of the first and second principal component with respect to time on the left.  Though there exists a complex overall shape to the amplitudes with respect to time, a clear linear trend exists within each night.  This is shown by the right plots in Figure  \ref{fig:nightlyVariation}.  As the beginning-of-night and end-of-night calibration sets always include LFC exposures, we use a simple linear interpolation to interpolate principal component amplitudes with respect to time.
@@ -309,6 +316,8 @@ Figure \ref{fig:nightlyVariation} shows the amplitude of the first and second pr
 \end{figure*} 
 
 The choice in interpolation method can help guide how many wavelength calibration images are truly needed.  It is unnecessary to take calibration images at times where the same information can be constructed by a well-chosen interpolation scheme.  For example, with the \expres\ data shown here, it is clear that nightly calibration images are needed, but for a linear trend, only two calibration images throughout the night are strictly required.
+
+We also tested an implementation of \name\ where the $K$ principal components within a night were fit to a cubic.  This emulates the current, polynomial-based wavelength solution implemented in the \expres\ pipline, where polynomial fits to calibration files are interpolated to science exposure by fitting the polynomial coefficients to a cubic.  We found that this method returns comparable RV RMS for most targets, though appears to do better when a night has sparse calibration data.
 
 The amplitudes $a_{n,k}$ can also be interpolated with respect to any good housekeeping data, not just time.  Best results will come from interpolating with respect to whatever is most strongly correlated with the calibration state of the spectrograph.  For example, with \expres, which is passively temperature controlled, the returned amplitudes $a_{n,k}$ were extremely correlated with the optical bench temperature, as shown in Figure \ref{fig:nightlyVariation}, suggesting it would also be possible to interpolate the amplitudes with respect to temperature.
 
@@ -337,20 +346,22 @@ We instead turn to the PCHIP interpolator, which damps down huge deviations in t
 
 \section{Application to Other Spectrographs}
 \label{sec:others}
-We focus on an \eprv\ use-case here, because there is a strong need for wavelength calibration in the \eprv\ community.  \expres\ is representative of the newest generation of \eprv\ spectrographs, and an LFC provides stable, dense calibration lines with known wavelengths, ideal for \name.  The applicability of \name\ to any one instrument is a detailed question of the kind of variance experienced by the spectrograph and calibration sources available, but we hope to provide some approximate benchmarks and diagnostics.
+We focus on an \eprv\ use-case here because there is a strong need for wavelength calibration in the \eprv\ community.  \expres\ is representative of the newest generation of \eprv\ spectrographs, and an LFC provides stable, dense calibration lines with known wavelengths, ideal for \name.  The applicability of \name\ to any one instrument is a detailed question of the kind of variance experienced by the spectrograph and calibration sources available, but we hope to provide some approximate benchmarks and diagnostics.
 
 Implementing \name\ will require an existing library of calibration exposures that span the range of calibration space accessible by the spectrograph, or at least the space accessed by the science exposures being calibrated.  A new set of calibration exposures would be needed for any changes to the instrument that could significantly change the calibration space.  While there is no exact cutoff for how many exposures are needed, the number is certainly much larger than $K$, the dimensionality of the calibration space.  More calibration exposures will help with denoising .  The number of calibration exposures required throughout a night will depend on how much the instrument varies throughout the night, and the chosen interpolation scheme, as mentioned in Section \ref{sec:choice_avt}.
 
-As an empirical assessment of the needed line density, we systematically removed LFC lines from the \expres\ data and calculated the per-line RMS of the returned wavelengths for the removed lines.  Figure \ref{fig:density} plots the scatter of residuals of the wavelengths returned by \name\ as a function of separation between lines in units of resolution element.  It gives an approximate estimation of the expected error between lines of different separation.  Note, however, that the stability of the lines and their measured line centers quickly becomes the dominant error source in calibration lamps over the separation between lines.  The needed line density depends on the resolution of a given spectrograph and the needed precision of the returned wavelength solution.
+As an empirical assessment of the needed line density, we systematically removed LFC lines from the \expres\ data and calculated the per-line RMS of the returned wavelengths for the removed lines.  Figure \ref{fig:density} plots the scatter of residuals of the wavelengths returned by \name\ as a function of separation between lines in units of resolution element.  It gives an approximate estimation of the expected error between lines of different separation.  Note, however, that the stability of the lines and their measured line centers quickly becomes the dominant error source in calibration lamps over the separation between lines.  Additionally, in this assessment, the lines remain uniformly spaced.  The needed line density depends on the resolution of a given spectrograph. the needed precision of the returned wavelength solution, and the chosen interpolation scheme.
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.5\textwidth]{Figures/lfcDensityTest.pdf}
 \caption{Per-line RMS as a function of spacing between lines in units of resolution element.  The average line spacing is calculated using the average distance between LFC lines across its wavelength range.}
 \label{fig:density}
-\end{figure} 
+\end{figure}
 
-\name\ can easily incorporate simultaneous calibration data, where a calibration source is taken through a reference fiber during science exposures, especially if the simultaneous reference is also used when taking calibration images.  The position of calibration lines taken through the reference fiber can simply be concatenated to the array of line positions taken through the science fiber.  Both sets of lines when then be used when the low-dimensional basis is constructed.  This allows the simultaneous calibration information to contribute to constructing the complete calibration space of the spectrograph and pinpoint where the spectrograph is in that calibration space for any exposure.
+This implementation of \name\ to \expres\ data interpolates calibration information to the science data using surrounding calibration exposures.  Simultaneous calibration data can be used to reinforce the determined calibration state of an instrument at the time of science exposures.  This simultaneous calibration data can come from calibration light shined through a reference fiber or any meta-data (e.g. temperature, pressure, time, etc.) that correlates with the calibration.  For example, we have seen that the calibration state of \expres\ is correlated with the temperature of the optical bench.  
+
+With a simultaneous reference fiber, the position of calibration lines taken through the reference fiber can simply be concatenated to the array of line positions taken through the science fiber.  Both sets of lines will then be used when the low-dimensional basis is constructed.  This allows the simultaneous calibration information to contribute to constructing the complete calibration space of the spectrograph and pinpoint where the spectrograph is in that calibration space for any exposure.
 
 The calibration for any science exposure with a simultaneous reference can be determined by finding the amplitude of each basis vector that most closely recreates the calibration line positions through the reference fiber.  These amplitudes can then be used to recreate the calibration line positions through the science fiber as well.  This replaces the need to interpolate the basis vector amplitudes from calibration exposures to science exposures, something that is done with respect to time in the example implementation described in this paper.  The result is likely to be even more precise, as this method incorporates more data.
 
@@ -404,6 +415,6 @@ Once we have defined a calibration space that captures all possible degrees of f
 
 \acknowledgements{We thank the EXPRES team for their work on the instrument, software, and pipeline.  We thank Dan Foreman-Mackey for illuminating discussion.  The data presented here made use of the Lowell Discovery Telescope at Lowell Observatory. Lowell is a private, non-profit institution dedicated to astrophysical research and public appreciation of astronomy and operates the LDT in partnership with Boston University, the University of Maryland, the University of Toledo, Northern Arizona University and Yale University. We gratefully acknowledge ongoing support for telescope time from Yale University, the Heising-Simons Foundation, and an anonymous donor in the Yale community. We especially thank the NSF for funding that allowed for precise wavelength calibration and software pipelines through NSF ATI-1509436 and NSF AST-1616086 and for the construction of EXPRES through MRI-1429365.  LLZ gratefully acknowledges support from the National Science Foundation Graduate Research Fellowship under Grant No. DGE1122492.}
 
-\bibliography{paper.bib}
+\bibliography{paper}
 
 \end{document}
