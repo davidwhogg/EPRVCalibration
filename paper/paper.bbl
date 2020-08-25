@@ -34,6 +34,12 @@ Aminikhanghahi, S., \& Cook, D.~J. 2017, Knowledge and Information Systems, 51,
 {Brewer}, J.~M., {Fischer}, D.~A., {Valenti}, J.~A., \& {Piskunov}, N. 2016,
   \apjs, 225, 32
 
+\bibitem[{{Brewer} {et~al.}(2020){Brewer}, {Fischer}, {Blackman}, {Cabot},
+  {Davis}, {Laughlin}, {Leet}, {Ong}, {Petersburg}, {Szymkowiak}, {Zhao},
+  {Henry}, \& {Llama}}]{brewer2020}
+{Brewer}, J.~M., {Fischer}, D.~A., {Blackman}, R.~T., {et~al.} 2020, \aj, 160,
+  67
+
 \bibitem[{{Butler} {et~al.}(1996){Butler}, {Marcy}, {Williams}, {McCarthy},
   {Dosanjh}, \& {Vogt}}]{butler1996}
 {Butler}, R.~P., {Marcy}, G.~W., {Williams}, E., {et~al.} 1996, \pasp, 108, 500
@@ -75,6 +81,9 @@ Aminikhanghahi, S., \& Cook, D.~J. 2017, Knowledge and Information Systems, 51,
 {Jurgenson}, C., {Fischer}, D., {McCracken}, T., {et~al.} 2016, in \procspie,
   Vol. 9908, Ground-based and Airborne Instrumentation for Astronomy VI, 99086T
 
+\bibitem[{Kramer(1991)}]{kramer1991}
+Kramer, M.~A. 1991, AIChE Journal, 37, 233
+
 \bibitem[{{Lovis} \& {Pepe}(2007)}]{lovis2007}
 {Lovis}, C., \& {Pepe}, F. 2007, \aap, 468, 1115
 
@@ -110,6 +119,11 @@ Oliphant, T. 2006--, {NumPy}: A guide to {NumPy}, USA: Trelgol Publishing, , ,
   Tschudi}, {Santos}, {Sosnowska}, {Sousa}, {Span{\`o}}, {Tenegi}, {Toso},
   {Vanzella}, {Viel}, \& {Zapatero Osorio}}]{pepe2013}
 {Pepe}, F., {Cristiani}, S., {Rebolo}, R., {et~al.} 2013, The Messenger, 153, 6
+
+\bibitem[{{Petersburg} {et~al.}(2018){Petersburg}, {McCracken}, {Eggerman},
+  {Jurgenson}, {Sawyer}, {Szymkowiak}, \& {Fischer}}]{petersburg2018}
+{Petersburg}, R.~R., {McCracken}, T.~M., {Eggerman}, D., {et~al.} 2018, \apj,
+  853, 181
 
 \bibitem[{{Petersburg} {et~al.}(2020){Petersburg}, {Ong}, {Zhao}, {Blackman},
   {Brewer}, {Buchhave}, {Cabot}, {Davis}, {Jurgenson}, {Leet}, {McCracken},
@@ -159,13 +173,6 @@ Plavchan, P., Latham, D., Gaudi, S., {et~al.} 2015
   {A laser frequency comb featuring sub-cm/s precision for routine operation on
   HARPS}, 91471C
 
-\bibitem[{{Schwab} {et~al.}(2016){Schwab}, {Rakich}, {Gong}, {Mahadevan},
-  {Halverson}, {Roy}, {Terrien}, {Robertson}, {Hearty}, {Levi}, {Monson},
-  {Wright}, {McElwain}, {Bender}, {Blake}, {St{\"u}rmer}, {Gurevich},
-  {Chakraborty}, \& {Ramsey}}]{neid}
-{Schwab}, C., {Rakich}, A., {Gong}, Q., {et~al.} 2016, in \procspie, Vol. 9908,
-  Ground-based and Airborne Instrumentation for Astronomy VI, 99087H
-
 \bibitem[{{Su{\'a}rez Mascare{\~n}o} {et~al.}(2020){Su{\'a}rez Mascare{\~n}o},
   {Faria}, {Figueira}, {Lovis}, {Damasso}, {Gonz{\'a}lez Hern{\'a}ndez},
   {Rebolo}, {Cristiano}, {Pepe}, {Santos}, {Zapatero Osorio}, {Adibekyan},
@@ -184,6 +191,9 @@ Plavchan, P., Latham, D., Gaudi, S., {et~al.} 2015
   {Udry}, {Zanutta}, \& {Zerbi}}]{mascareno2020}
 {Su{\'a}rez Mascare{\~n}o}, A., {Faria}, J.~P., {Figueira}, P., {et~al.} 2020,
   arXiv e-prints, arXiv:2005.12114
+
+\bibitem[{{Tsalmantza} \& {Hogg}(2012)}]{tsalmantza2012}
+{Tsalmantza}, P., \& {Hogg}, D.~W. 2012, \apj, 753, 122
 
 \bibitem[{{van der Walt} {et~al.}(2011){van der Walt}, {Colbert}, \&
   {Varoquaux}}]{numpy2}
@@ -213,5 +223,10 @@ Plavchan, P., Latham, D., Gaudi, S., {et~al.} 2015
   {Manescau}, {Pasquini}, {Gonz{\'a}lez Hern{\'a}ndez}, {Rebolo}, {H{\"a}nsch},
   {Udem}, \& {Holzwarth}}]{wilken2012}
 {Wilken}, T., {Curto}, G.~L., {Probst}, R.~A., {et~al.} 2012, \nat, 485, 611
+
+\bibitem[{{Woodbridge} {et~al.}(2020){Woodbridge}, {Elidan}, \&
+  {Wiesel}}]{woodbridge2020}
+{Woodbridge}, Y., {Elidan}, G., \& {Wiesel}, A. 2020, arXiv e-prints,
+  arXiv:2004.10255
 
 \end{thebibliography}
