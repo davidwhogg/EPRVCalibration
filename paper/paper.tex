@@ -229,8 +229,7 @@ Histograms of the per-line residuals for each of the above described polynomial,
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.455\textwidth]{Figures/lineResids2D_col.png}
-%\includegraphics[width=0.5\textwidth]{Figures/lineResids2D_col.pdf}
+\includegraphics[width=0.455\textwidth]{Figures/lineResids2D_col.pdf}
 \caption{Residuals of a single LFC exposure plotted with respect to detector position (as defined by echelle order and x-pixel) for parametric and non-parametric wavelength calibration methods.  Each line is colored by the difference between the predicted wavelength and the theoretical wavelength for each line, given in units of $\mps$.  \textbf{Top}: residuals to a classic, polynomial fit.  \textbf{Bottom}: residuals to an interpolated wavelength solution.  High-order structure, i.e. vertical stripes and patchiness, is apparent in the residuals to a polynomial wavelength solution, which assumes smoothness.}
 \label{fig:resid2d}
 \end{figure}
@@ -239,7 +238,7 @@ Histograms of the per-line residuals for each of the above described polynomial,
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{Figures/lineDensity.png}
+\includegraphics[width=\textwidth]{Figures/lineDensity.pdf}
 \caption{Residuals when using ThAr lines to predict wavelengths for LFC lines.  \textbf{Right}: residuals for a single LFC exposure plotted with respect to detector position and colored by residual, as in Figure \ref{fig:resid2d}.  The positions of ThAr lines are over-plotted in yellow.  In general, residuals are greater between ThAr lines with greater separation.
 \textbf{Left}: Comparison of polynomial and interpolated wavelength solutions using either just ThAr lines or LFC lines for a subset of echelle order 94.  The shape of the residuals from a polynomial fit are similar whether using ThAr lines or LFC lines.  A PCHIP interpolated wavelength model guided by LFC lines returns the smallest residuals.}
 \label{fig:waveResids}
@@ -299,8 +298,7 @@ The implementation of \name\ presented here, using PCA for denoising and interpo
 \subsection{Dimensionality of the Calibration Space, $K$}
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{Figures/pcsLfc9.png}
-%\includegraphics[width=\textwidth]{Figures/pcsLfc6.pdf}
+\includegraphics[width=\textwidth]{Figures/pcsLfc9.pdf}
 \caption{\textbf{Top}:  The fiducial calibration of the spectrograph, i.e. the mean line positions for each line throughout the epoch of stability.  The following $3 \times 3$ grid of plots show the first nine principal components constructed using LFC lines.  These principal components represent the basis vectors along which the calibration of the spectrograph can deviate from the fiducial calibration.  For each principal component, or basis vector, each calibration line is plotted according to its echelle order and x-pixel and colored by the value of the basis vector for that line.  Principal components beyond the sixth one become steadily more dominated by noise.}
 \label{fig:pcLfc}
 \end{figure*}
@@ -321,7 +319,7 @@ In deciding a $K$ value, we ran denoising tests, as described in Section \ref{se
 \label{sec:choice_avt}
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{Figures/pcAs_byDay.png}
+\includegraphics[width=\textwidth]{Figures/pcAs_byDay.pdf}
 \caption{Amplitude of the first two principal components shown as a function of time (left) or hour from midnight (right).  The top row of plots shows the amplitudes for the first principal component while the bottom row shows the amplitudes for the second principal component.  Lines show the result of a linear interpolation.  In the top, right plot, the temperature of the optical bench is also plotted in orange.  In the right plots, the principal component amplitudes for each night have been artificially offset by the median amplitude.  All days are therefore roughly on the same scale, but the y-axis is different from the left plots.  In the right column, points are colored by the MJD of each exposure.}
 \label{fig:nightlyVariation}
 \end{figure*} 
@@ -339,7 +337,7 @@ Another pertinent example would be a spectrograph that is mounted on the telesco
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{Figures/intpx_tests.png}
+\includegraphics[width=\textwidth]{Figures/intpx_tests.pdf}
 \caption{Residuals from different interpolation schemes over pixels in echelle order 100.  ThAr lines, shown as blue circles, are used to construct a wavelength solution that is then evaluated at each LFC line, shown as blue lines.  The residuals of each wavelength solution for a subset of the order is shown on the left.  Histograms of the residuals for each method for the complete order is shown on the right.  Here, the y-axis is zoomed in to show the shape of each histogram more clearly.  Note: there is a blended ThAr line at approximately pixel 5300, the last ThAr line plotted.}
 \label{fig:xinterp}
 \end{figure*} 
