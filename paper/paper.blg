@@ -1,8 +1,50 @@
-This is BibTeX, Version 0.99dThe top-level auxiliary file: paper.aux
+This is BibTeX, Version 0.99d (TeX Live 2020)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: paper.aux
 The style file: aasjournal.bst
 Database file #1: paper.bib
-Warning--empty publisher in numpy
+Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
 Warning--empty journal in plavchan2015
 Warning--empty publisher in probst2014
-Warning--empty publisher in wiki_pca
-(There were 4 warnings)
+You've used 34 entries,
+            3168 wiz_defined-function locations,
+            902 strings with 22596 characters,
+and the built_in function-call counts, 22692 in all, are:
+= -- 1378
+> -- 2628
+< -- 9
++ -- 872
+- -- 922
+* -- 2455
+:= -- 4406
+add.period$ -- 39
+call.type$ -- 34
+change.case$ -- 186
+chr.to.int$ -- 34
+cite$ -- 36
+duplicate$ -- 595
+empty$ -- 1004
+format.name$ -- 958
+if$ -- 4333
+int.to.chr$ -- 1
+int.to.str$ -- 0
+missing$ -- 31
+newline$ -- 115
+num.names$ -- 136
+pop$ -- 213
+preamble$ -- 1
+purify$ -- 186
+quote$ -- 0
+skip$ -- 555
+stack$ -- 0
+substring$ -- 735
+swap$ -- 28
+text.length$ -- 2
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 303
+warning$ -- 2
+while$ -- 117
+width$ -- 0
+write$ -- 378
+(There were 2 warnings)
