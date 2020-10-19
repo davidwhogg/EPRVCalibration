@@ -1,10 +1,13 @@
 # Functions needed to run Excalibur
-# Expect this to be replaced in the future, since most
-# of the development is being done in an independent repository
-
+# Data munging in separate file
+from os.path import basename
 import numpy as np
 from astropy.time import Time
 from scipy import interpolate, optimize
+from tqdm.auto import trange
+
+import warnings
+warnings.simplefilter('ignore', np.RankWarning)
 
 
 ###########################################################
@@ -118,7 +121,7 @@ def patchAndDenoise(x_values, orders, waves,
     
     ### Vetting
     # Find where there is no line information
-    x_values[x_values < 1] = np.nan # This will throw a warning
+    x_values[np.nan_to_num(x_values) < 1] = np.nan
     
     # Mask out of order lines
     out_of_order = np.zeros_like(x_values,dtype=bool)
@@ -174,14 +177,7 @@ def patchAndDenoise(x_values, orders, waves,
     bad_mask = np.isnan(x_values) # mask to identify patched x_values
     if running_window > 0:
         half_size = int(running_window//2)
-        for i in range(x_values.shape[0]):
-            # Identify files in window
-            file_range = [max((i-half_size,0)), min((i+half_size+1,x_values.shape[1]))]
-            # Find mean of non-NaN values
-            run_med = np.nanmean(x_values[file_range[0]:file_range[1],:],axis=0)
-            # Patch NaN values with mean for center file
-            x_values[i][bad_mask[i,:]] = run_med[bad_mask[i,:]]
-        counter = 5
+        counter = 6
         while np.sum(np.isnan(x_values)) > 0:
             for i in range(x_values.shape[0]):
                 # Identify files in window
@@ -254,6 +250,21 @@ def patchAndDenoise(x_values, orders, waves,
     
     return patch_dict
 
+# Functions for recovering the date of an exposure
+def isot2date(isot_time):
+    yr, mn, dy = isot_time.split('T')[0].split('-')
+    return str(int(yr[2:]+mn+dy))
+
+def mjds2dates(times):
+    return np.array([isot2date(Time(t, format='mjd').isot) for t in times]).astype(str)
+
+def files2dates(files):
+    dates = []
+    for file_name in files:
+        date = basename(file_name).split('_')[-1].split('.')[0]
+        dates.append(date)
+    return np.array(dates).astype(str)
+
 def interpPCA(new_interps, patch_dict, intp_deg=1, interp_key='times'):
     """
     Interpolate eigen coefficients with respect to chosen interp_key.
@@ -284,11 +295,27 @@ def interpPCA(new_interps, patch_dict, intp_deg=1, interp_key='times'):
         unravel = True
     K  = patch_dict['K']
     vv = patch_dict['v']
+    
+    # Set up nightly code if needed
+    if intp_deg=='poly':
+        new_dates = mjds2dates(new_interps)
+        cal_dates = files2dates(patch_dict['files'])
+    
     # Interpolate eigen coefficients
     new_ecs = np.empty((len(new_interps),K),dtype=float)
     for i in range(K):
-        # Interpolating one by one seems right, right?
-        if intp_deg==0:
+        if intp_deg=='poly':
+            for date in np.unique(new_dates):
+                new_date_mask = new_dates==date
+                cal_date_mask = cal_dates==date
+                if np.sum(cal_date_mask) < 5:
+                    continue
+                
+                z = np.polyfit(patch_dict['times'][cal_date_mask][3:],
+                               patch_dict['ec'][cal_date_mask][3:,i],3)
+                new_ecs[new_date_mask,i] = np.poly1d(z)(new_interps[new_date_mask])
+        
+        elif intp_deg==0:
             # Find nearest time for each time
             # IS THERE A WAY TO DO THIS NOT ONE BY ONE???
             for i_idx, i in enumerate(new_interps):
