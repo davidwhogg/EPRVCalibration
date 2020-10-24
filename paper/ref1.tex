@@ -1,7 +1,7 @@
 % This document is part of the EPRVCalibration project
 %DIF LATEXDIFF DIFFERENCE FILE
 %DIF DEL draft1.tex   Sun Oct 18 21:25:13 2020
-%DIF ADD paper.tex    Mon Oct 19 09:47:10 2020
+%DIF ADD paper.tex    Fri Oct 23 20:57:40 2020
 % Copyright 2019 the authors. All rights reserved.
 
 % style notes
@@ -105,7 +105,7 @@
 \affil{Yale University, 52 Hillhouse, New Haven, CT 06511, USA}
 
 \begin{abstract}\noindent%
-\Name\ is a non-parametric, hierarchical framework for precision wavelength-calibration of spectrographs.  It is designed with the needs of extreme-precision radial velocity (\eprv) in mind, which require that instruments be calibrated or stabilized to better than $10^{-4}$ pixels.  Instruments vary along only a few dominant degrees of freedom, especially \eprv\ instruments \DIFdelbegin \DIFdel{, which }\DIFdelend \DIFaddbegin \DIFadd{that }\DIFaddend feature highly stabilized optical systems and detectors.  \Name\ takes advantage of this property by using all calibration data to construct a low-dimensional representation of all accessible calibration states for an instrument.  \Name\ also takes advantage of \DIFdelbegin \DIFdel{laser-frequency }\DIFdelend \DIFaddbegin \DIFadd{laser frequency }\DIFaddend combs or etalons, which generate a dense set of stable calibration points.  This density permits the use of a non-parametric wavelength solution that can adapt to any instrument or detector oddities better than \DIFdelbegin \DIFdel{any parametric model}\DIFdelend \DIFaddbegin \DIFadd{parametric models}\DIFaddend , such as a polynomial.  We demonstrate the success of this method with data from the \textsl{EXtreme PREcision Spectrograph} (\expres), which \DIFdelbegin \DIFdel{includes }\DIFdelend \DIFaddbegin \DIFadd{uses }\DIFaddend a laser frequency comb.  When wavelengths are assigned to laser comb lines using \name, the RMS of the residuals is about five times lower than wavelengths assigned using polynomial fits to individual exposures.  \DIFdelbegin \DIFdel{In a typical test case, radial-velocity }\DIFdelend \DIFaddbegin \DIFadd{Radial-velocity }\DIFaddend measurements of HD~34411 showed a reduction in RMS scatter over a 10-month time baseline from $1.22$ to $1.05\, \mps$.
+\Name\ is a non-parametric, hierarchical framework for precision wavelength-calibration of spectrographs.  It is designed with the needs of extreme-precision radial velocity (\eprv) in mind, which require that instruments be calibrated or stabilized to better than $10^{-4}$ pixels.  Instruments vary along only a few dominant degrees of freedom, especially \eprv\ instruments \DIFdelbegin \DIFdel{, which }\DIFdelend \DIFaddbegin \DIFadd{that }\DIFaddend feature highly stabilized optical systems and detectors.  \Name\ takes advantage of this property by using all calibration data to construct a low-dimensional representation of all accessible calibration states for an instrument.  \Name\ also takes advantage of \DIFdelbegin \DIFdel{laser-frequency }\DIFdelend \DIFaddbegin \DIFadd{laser frequency }\DIFaddend combs or etalons, which generate a dense set of stable calibration points.  This density permits the use of a non-parametric wavelength solution that can adapt to any instrument or detector oddities better than \DIFdelbegin \DIFdel{any parametric model}\DIFdelend \DIFaddbegin \DIFadd{parametric models}\DIFaddend , such as a polynomial.  We demonstrate the success of this method with data from the \textsl{EXtreme PREcision Spectrograph} (\expres), which \DIFdelbegin \DIFdel{includes }\DIFdelend \DIFaddbegin \DIFadd{uses }\DIFaddend a laser frequency comb.  When wavelengths are assigned to laser comb lines using \name, the RMS of the residuals is about five times lower than wavelengths assigned using polynomial fits to individual exposures.  \DIFdelbegin \DIFdel{In a typical test case, radial-velocity }\DIFdelend \DIFaddbegin \DIFadd{Radial-velocity }\DIFaddend measurements of HD~34411 showed a reduction in RMS scatter over a 10-month time baseline from \DIFdelbegin \DIFdel{$1.22$ }\DIFdelend \DIFaddbegin \DIFadd{$1.17$ }\DIFaddend to $1.05\, \mps$.
 \end{abstract}
 
 
@@ -224,8 +224,7 @@ In the implementation of \name\ presented here, the amplitudes of the principal 
 \subsection{Interpolating a Wavelength Solution} \label{sec:interp_wsol}
 From the de-noising step, \name\ can now construct a set of calibration lines, \DIFdelbegin \DIFdel{$x(\lambda,m,n')$ }\DIFdelend \DIFaddbegin \DIFadd{$x'(\lambda,m,n')$ }\DIFaddend for any exposure $n'$.  To construct a wavelength solution, we invert \DIFdelbegin \DIFdel{$x(\lambda,m,n')$ to $\lambda(x,m,n')$ }\DIFdelend \DIFaddbegin \DIFadd{$x'(\lambda,m,n')$ to $\lambda(x',m,n')$ }\DIFaddend by interpolating known wavelengths of the calibration lines over detector position.  For instance, interpolating the known wavelengths vs. line centers onto every integer $x$ will generate wavelengths for each pixel in an echelle order.
 
-After experiments, we found that a cubic-spline interpolation that enforces monotonicity, such as a Piecewise Cubic Hermite Interpolating Polynomial (PCHIP) interpolator, works well for interpolating wavelengths onto pixels.  A cubic spline allows for more flexibility than a parameterized function, while the enforced monotonicity allows the wavelength solution, \DIFdelbegin \DIFdel{$\lambda(x,m,n')$}\DIFdelend \DIFaddbegin \DIFadd{$\lambda(x',m,n')$}\DIFaddend , to be invertible and prevents spurious deviations that may befall a cubic spline.  Choices in interpolation scheme, $K$, and other tests are further discussed in Section \ref{sec:choice_wvp}.  \DIFaddbegin \DIFadd{Our implementation of \name\ is hosted on GitHub}\footnote{\url{https://www.github.com/davidwhogg/EPRVCalibration}}\DIFadd{.
-}\DIFaddend 
+After experiments, we found that a cubic-spline interpolation that enforces monotonicity, such as a Piecewise Cubic Hermite Interpolating Polynomial (PCHIP) interpolator, works well for interpolating wavelengths onto pixels.  A cubic spline allows for more flexibility than a parameterized function, while the enforced monotonicity allows the wavelength solution, \DIFdelbegin \DIFdel{$\lambda(x,m,n')$}\DIFdelend \DIFaddbegin \DIFadd{$\lambda(x',m,n')$}\DIFaddend , to be invertible and prevents spurious deviations that may befall a cubic spline.  Choices in interpolation scheme, $K$, and other tests are further discussed in Section \ref{sec:choice_wvp}.
 
 \begin{algorithm}
 \SetAlgoLined
@@ -247,8 +246,10 @@ Find $a_{n',k}$ by interpolating $a_{n,k}$ with respect to $t_{n'}$\;
 \DIFaddend \caption{Generating Wavelength Solution}
 \end{algorithm}
 
+\DIFaddbegin \DIFadd{The implementation of \name\ described here is hosted on GitHub}\footnote{\url{https://www.github.com/lilyling27/excalibur}}\DIFadd{.
+}
 
-\section{Data} \label{sec:data}
+\DIFaddend \section{Data} \label{sec:data}
 We tested \name\ using data from \expres, the EXtreme PRecison Spectrograph.  \expres\ is an environmentally-stabilized, fiber-fed optical spectrograph with a median resolving power $R=\lambda/\delta_{\lambda}=\sim137,000$, over a wavelength range of $390-780\, nm$ \citep{jurgenson2016, blackman2020}.  \expres\ has two different wavelength calibration sources, a thorium argon (ThAr) lamp and a Menlo Systems laser frequency comb (LFC).  LFCs are unique in that the wavelengths of their emission lines are stable and exactly known at pico-meter accuracy \citep{wilken2012, molaro2013, probst2014}.
 
 Rather than using a simultaneous calibration fiber, two to three LFC exposures are obtained roughly every 30 minutes while the telescope is slewing to new targets.  ThAr exposures are taken at the beginning and end of each night.  All calibration data are taken through the science fiber, so that calibration light travels down the same optical pathway and is projected onto the same pixels as the science observations.  Light passes through a pupil slicer and double scrambler before being injected into a rectangular fiber, which is fed through a mechanical agitator to ensure modal mixing\citep{petersburg2018}.
@@ -298,24 +299,23 @@ where $\lambda_{p,theory}$ is the theoretical wavelength for line $p$, $\lambda_
 \label{fig:testHists}
 \end{figure} 
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.455\textwidth]{Figures/lineResids2D_col.pdf}
-\caption{Residuals of a single LFC exposure plotted with respect to detector position (as defined by echelle order and x-pixel) for parametric \DIFaddbeginFL \DIFaddFL{(top) }\DIFaddendFL and non-parametric \DIFaddbeginFL \DIFaddFL{(bottom) }\DIFaddendFL wavelength calibration methods.  Each line is colored by the difference between the predicted wavelength and the theoretical wavelength for each line, given in units of $\mps$.  \DIFdelbeginFL \textbf{\DIFdelFL{Top}}%DIFAUXCMD
+\DIFdelbegin %DIFDELCMD < \begin{figure}[h]
+%DIFDELCMD < %%%
+\DIFdelendFL \DIFaddbeginFL \begin{figure*}[t]
+\DIFaddendFL \centering
+\DIFdelbeginFL %DIFDELCMD < \includegraphics[width=0.455\textwidth]{Figures/lineResids2D_col.pdf}
+%DIFDELCMD < %%%
+\DIFdelendFL \DIFaddbeginFL \includegraphics[width=\textwidth]{Figures/lineResids2D.pdf}
+\DIFaddendFL \caption{Residuals of a single LFC exposure plotted with respect to detector position (as defined by echelle order and x-pixel) for parametric \DIFaddbeginFL \DIFaddFL{(top) }\DIFaddendFL and non-parametric \DIFaddbeginFL \DIFaddFL{(bottom) }\DIFaddendFL wavelength calibration methods.  Each line is colored by the difference between the predicted wavelength and the theoretical wavelength for each line, given in units of $\mps$.  \DIFdelbeginFL \textbf{\DIFdelFL{Top}}%DIFAUXCMD
 \DIFdelFL{: residuals to a classic, polynomial fit.  }\textbf{\DIFdelFL{Bottom}}%DIFAUXCMD
 \DIFdelFL{: residuals to an interpolated wavelength solution.  }\DIFdelendFL High-order structure, i.e. vertical stripes and patchiness, is apparent in the residuals to a polynomial wavelength solution, which assumes smoothness.}
 \label{fig:resid2d}
-\end{figure}
+\DIFdelbeginFL %DIFDELCMD < \end{figure}
+%DIFDELCMD < %%%
+\DIFdelend \DIFaddbegin \end{figure*}
+\DIFaddend 
 
-\DIFaddbegin \begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{Figures/lineDensity.pdf}
-\caption{\DIFaddFL{Residuals when using ThAr lines to predict wavelengths for LFC lines.  }\textbf{\DIFaddFL{Left}}\DIFaddFL{: residuals for a single LFC exposure plotted with respect to detector position and colored by residual, as in Figure \ref{fig:resid2d}.  The positions of ThAr lines are over-plotted in yellow.  In general, residuals are greater between ThAr lines with greater separation.
-}\textbf{\DIFaddFL{Right}}\DIFaddFL{: Comparison of polynomial and interpolated wavelength solutions using either just ThAr lines or LFC lines for a subset of echelle order 94.  The shape of the residuals from a polynomial fit are similar whether using ThAr lines or LFC lines.  A PCHIP interpolated wavelength model guided by LFC lines returns the smallest residuals.}}
-\label{fig:waveResids}
-\end{figure*}
-
-\DIFadd{The per-line residuals from the denoising test also exhibit smaller spread than interpolation alone.  This suggests that the spectrograph truly is accurately represented by a low-dimensional model.  Recreating line positions using this model gives better line position estimates than treating each exposure independently.  The low-dimensional model does not incorporate noise from individual line measurements.  Returning more precise, denoised line positions results in smaller per-line residuals.
+\DIFaddbegin \DIFadd{The per-line residuals from the denoising test also exhibit smaller spread than interpolation alone.  This suggests that the spectrograph truly is accurately represented by a low-dimensional model.  Recreating line positions using this model gives better line position estimates than treating each exposure independently.  The low-dimensional model does not incorporate noise from individual line measurements.  Returning more precise, denoised line positions results in smaller per-line residuals.
 }
 
 \DIFaddend \Name -generated wavelengths also exhibit less structure in the returned residuals.  For a randomly selected example LFC exposure, Figure \ref{fig:resid2d} plots each line with respect to its echelle order (y-axis) and x-pixel on the detector (x-axis) colored by the difference between the predicted and theoretical wavelength for that line in units of $\mps$.
@@ -344,7 +344,15 @@ Though the interpolated wavelength solution returns lower, less-structured resid
 
 Note that running \name\ informed by only ThAr lines cannot be regarded as a direct comparison to the LFC runs, as the increased uncertainty and variability in ThAr line positions alone makes the resultant wavelength predictions an order of magnitude worse, hence the different scale of the colorbar in the left plot of Figure \ref{fig:waveResids} as compared to Figure \ref{fig:resid2d}.  All the same, the residuals are in general worse where lines are further apart (for example, in redder echelle orders) than where lines are denser.
 
-Figure \ref{fig:waveResids} \DIFaddbegin \DIFadd{(right) }\DIFaddend plots the residuals for a subset of order 94 for both a polynomial-based method and a PCHIP-based method guided by either ThAr lines or LFC lines.   The PCHIP model with ThAr lines (orange, dashed curve) returns huge residuals between two widely-separated ThAr lines that extends out of frame.  The classic, polynomial fit exhibits similar residuals in both amplitude and shape regardless of whether the set of ThAr lines or LFC lines are used.  An interpolated wavelength solution using LFC lines (black, solid curve) exhibits the lowest residuals.
+\DIFdelbegin \DIFdel{Figure \ref{fig:waveResids} }\DIFdelend \DIFaddbegin \begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{Figures/lineDensity.pdf}
+\caption{\DIFaddFL{Residuals when using ThAr lines to predict wavelengths for LFC lines.  }\textbf{\DIFaddFL{Left}}\DIFaddFL{: residuals for a single LFC exposure plotted with respect to detector position and colored by residual, as in Figure \ref{fig:resid2d}.  The positions of ThAr lines are over-plotted in yellow.  In general, residuals are greater between ThAr lines with greater separation.
+}\textbf{\DIFaddFL{Right}}\DIFaddFL{: Comparison of polynomial and interpolated wavelength solutions using either just ThAr lines or LFC lines for a subset of echelle order 94.  The shape of the residuals from a polynomial fit are similar whether using ThAr lines or LFC lines.  A PCHIP interpolated wavelength model guided by LFC lines returns the smallest residuals.}}
+\label{fig:waveResids}
+\end{figure*}
+
+\DIFadd{Figure \ref{fig:waveResids} (right) }\DIFaddend plots the residuals for a subset of order 94 for both a polynomial-based method and a PCHIP-based method guided by either ThAr lines or LFC lines.   The PCHIP model with ThAr lines (orange, dashed curve) returns huge residuals between two widely-separated ThAr lines that extends out of frame.  The classic, polynomial fit exhibits similar residuals in both amplitude and shape regardless of whether the set of ThAr lines or LFC lines are used.  An interpolated wavelength solution using LFC lines (black, solid curve) exhibits the lowest residuals.
 
 The move to an interpolated wavelength solution is driven by the assumption that a high density of calibration lines allows for more freedom in the resultant wavelength solution.  This freedom allows the wavelength solution to more accurately ascribe wavelengths.  This flexibility, however, is no longer justified in the regime where there are large separations between calibration lines, as this no longer provide sufficient constraint on the interpolated wavelength solution, as is the case in some regions of a classic ThAr lamp.
 
@@ -359,11 +367,13 @@ The move to an interpolated wavelength solution is driven by the assumption that
 \label{fig:rvs}
 \end{figure*}
 
-We tested \name -generated wavelengths on RV measurements using \expres\ observations of \target, which are presented in Table \ref{tab:rv}.  \target\ is a G0V star.  It is $4.8\, Gyr$ old and relatively quiet ($log R'_{HK} = -5.09$) \citep{brewer2016}.  We use 114 observations of \target\ taken between October 8, 2019 and \DIFdelbegin \DIFdel{August 13}\DIFdelend \DIFaddbegin \DIFadd{March 5}\DIFaddend , 2020 with SNR 250.  Radial-velocity measurements were derived using a chunk-by-chunk, forward-modeling algorithm ran by the \expres\ team \citep{petersburg2020}.
+We tested \name -generated wavelengths on RV measurements using \expres\ observations of \target, which are presented in Table \ref{tab:rv}.  \target\ is a G0V star.  It is $4.8\, Gyr$ old and relatively quiet ($log R'_{HK} = -5.09$) \citep{brewer2016}.  \DIFaddbegin \DIFadd{Because \target\ has no known planets and should have a smaller contribution from stellar signals, it is a good star to test the effects of the wavelength calibration on the RMS of the returned RVs.  }\DIFaddend We use 114 observations of \target\ taken between October 8, 2019 and \DIFdelbegin \DIFdel{August 13}\DIFdelend \DIFaddbegin \DIFadd{March 5}\DIFaddend , 2020 with SNR 250.  Radial-velocity measurements were derived using a chunk-by-chunk, forward-modeling algorithm ran by the \expres\ team \citep{petersburg2020}.
 
 Figure \ref{fig:rvs} compares the resultant RVs when using a classic, ninth-degree polynomial wavelength solution and an \name -generated wavelength model.  Using \name -generated wavelengths reduces the RMS of the entire data set from \DIFdelbegin \DIFdel{$1.22\, \mps$ }\DIFdelend \DIFaddbegin \DIFadd{$1.17\, \mps$ }\DIFaddend with the classic wavelength solution to $1.05\, \mps$.  This is equivalent to removing an independent, additive noise component of \DIFdelbegin \DIFdel{$0.62\, \mps \,(=\sqrt{1.22^2-1.05^2})$.
-A reduction in RMS was observed universally in all data sets tested; other data sets showed a reduction in RMS between $0.2-0.5\, \mps$.
-}\DIFdelend \DIFaddbegin \DIFadd{$0.52\, \mps \,(=\sqrt{1.17^2-1.05^2})$.
+A reduction in RMS was observed universally in all data sets tested; }\DIFdelend \DIFaddbegin \DIFadd{$0.52\, \mps \,(=\sqrt{1.17^2-1.05^2})$.
+}
+
+\DIFadd{We conducted a direct test of a classically-generated wavelength solution with \name -wavelengths on four }\DIFaddend other data sets\DIFaddbegin \DIFadd{.  All targets }\DIFaddend showed a reduction in \DIFdelbegin \DIFdel{RMS between $0.2-0.5\, \mps$.  }\DIFdelend \DIFaddbegin \DIFadd{or comparable RV RMS.  The results from these data sets can not be interpreted as directly as with \target, though, due to larger contributions from stellar variability, known planets, etc.  As completely mitigating these different effects is out of scope for this paper, we focus here on the results with \target.
 }\DIFaddend 
 
 \begin{deluxetable}{c c c}[t!]
@@ -387,7 +397,7 @@ A reduction in RMS was observed universally in all data sets tested; other data 
 \section{Choose Your Own Implementation} \label{sec:choices}
 We have described and tested only one implementation of \name.  Using PCA and an interpolated wavelength solution is a statistically straight-forward step towards a complete hierarchical and non-parametric wavelength model.  It is possible to upgrade both the denoising and wavelength solution steps to true models.  It is also possible, of course, to implement either step individually.  A hierarchical framework can be used to simply denoise the lines before they are fit to a parametric model, and a non-parametric model can be used on lines that have not been denoised.
 
-For the dimensionality reduction and denoising, the PCA could be replaced by a probabilistic PCA model or other probabilistic linear reduction methods, such as heteroscedastic matrix factorization (HMF)\citep{tsalmantza2012}.  It is also possible to move to non-linear reduction methods, like an auto-encoder or a normalizing flow \citep[e.g.][]{kramer1991,woodbridge2020}\DIFaddbegin \DIFadd{.  Careful choice in the denoising model could enable \name\ to capture large-scale changes as well as small variations in calibration state.  This would bridge data broken up by significant format changes (e.g. replacing hardware, opening the spectrograph chamber, etc.).
+For the dimensionality reduction and denoising, the PCA could be replaced by a probabilistic PCA model or other probabilistic linear reduction methods, such as heteroscedastic matrix factorization (HMF)\citep{tsalmantza2012}.  It is also possible to move to non-linear reduction methods, like \DIFaddbegin \DIFadd{a Guassian process latent-variable model, }\DIFaddend an auto-encoder\DIFdelbegin \DIFdel{or }\DIFdelend \DIFaddbegin \DIFadd{, }\DIFaddend a normalizing flow \citep[e.g.][]{kramer1991,woodbridge2020}\DIFaddbegin \DIFadd{.  Using a non-linear denoising model could enable \name\ to capture large-scale changes as well as small variations in calibration state.
 }\DIFaddend 
 
 The wavelength solution could also move past interpolation.  For example, a Gaussian process could be used that is constrained to ensure monotonicity.  Replacing each step with a model will allow for full, hierarchical Bayesian inference.  This means the uncertainty from wavelength calibration could be completely marginalized out.  Doing so will have the largest impact if the wavelength calibration is a significant fraction of the error budget.
@@ -535,7 +545,7 @@ Compared to traditional methods, which involve fitting high-order polynomials, \
 
 The locality of the interpolation caries other benefits as well.  Manufacturing artifacts in the detector or other optical elements can lead to non-smooth structure in the wavelength solution that can not be captured by polynomials or other smooth functions (see \figurename~\ref{fig:resid2d}).  An interpolated model introduces greater flexibility, enabling the model to account for such high-order effects.  As discussed in Section \ref{sec:choice_wvp}, there are better and worse interpolators for the task, which may differ for different instruments and different calibration sources.  Instead of using an interpolator at all, there might be better results from implementing something more sophisticated, such as a kernel method or a Gaussian process with a kernel adapted for the specifics of an instrument.  There is in principle an enormous number of non-parametric methods to explore, which we leave outside the scope of this paper.
 
-Similarly, PCA is just one of many possible dimensionality-reduction methods.  We chose to implement \name\ using PCA here for simplicity and computational tractability.  If \name\ was updated to a full probabilistic model, the PCA along with the interpolation model would have to be upgraded to something with better probabilistic properties.  \DIFaddbegin \DIFadd{Other denoising methods may be more robust to large changes, allowing all calibration images ever taken with an instrument to be used to construct the accessible calibration state regardless of hardware adjustments.  }\DIFaddend Further discussion of other implementations of \name\ can be found in Section \ref{sec:choices}.
+Similarly, PCA is just one of many possible dimensionality-reduction methods.  We chose to implement \name\ using PCA here for simplicity and computational tractability.  \DIFaddbegin \DIFadd{PCA is a good option because the instrument changes here are small enough that a linear model is an approrpiate representation of the changes.  }\DIFaddend If \name\ was updated to a full probabilistic model, the PCA along with the interpolation model would have to be upgraded to something with better probabilistic properties.  \DIFaddbegin \DIFadd{Other, nonlinear denoising methods may be more robust to large changes, allowing all calibration images ever taken with an instrument to be used to construct the accessible calibration state regardless of hardware adjustments.  }\DIFaddend Further discussion of other implementations of \name\ can be found in Section \ref{sec:choices}.
 
 \Name\ can be applied to any data that contains information about the calibration state of the spectrograph (see Section \ref{sec:others}).  For example, though LFC and ThAr exposures are used as an example in this paper, \name\ would work similarly for an etalon or any other arc lamp with a list of lines and assigned wavelengths.  Simultaneous calibration information can easily be accounted for by simply including the line position information from the simultaneous reference when constructing a low-dimensional basis of the instrument's calibration space.
 
@@ -548,7 +558,7 @@ Once we have defined a calibration space that captures all possible degrees of f
 \facilities{LDT}
 
 \acknowledgements
-We thank the EXPRES team for their work on the instrument, software, and pipeline.  We thank Dan Foreman-Mackey for illuminating discussion.  The data presented here made use of the Lowell Discovery Telescope at Lowell Observatory. Lowell is a private, non-profit institution dedicated to astrophysical research and public appreciation of astronomy and operates the LDT in partnership with Boston University, the University of Maryland, the University of Toledo, Northern Arizona University and Yale University. We gratefully acknowledge ongoing support for telescope time from Yale University, the Heising-Simons Foundation, and an anonymous donor in the Yale community. We especially thank the NSF for funding that allowed for precise wavelength calibration and software pipelines through NSF ATI-1509436 and NSF AST-1616086 and for the construction of EXPRES through MRI-1429365.  LLZ gratefully acknowledges support from the National Science Foundation Graduate Research Fellowship under Grant No. DGE1122492.
+\DIFaddbegin \DIFadd{We  gratefully  acknowledge  the  anonymous  referee whose  insightful  and  well thought out  comments  significantly improved the paper.  }\DIFaddend We thank the EXPRES team for their work on the instrument, software, and pipeline.  We thank Dan Foreman-Mackey for illuminating discussion.  The data presented here made use of the Lowell Discovery Telescope at Lowell Observatory. Lowell is a private, non-profit institution dedicated to astrophysical research and public appreciation of astronomy and operates the LDT in partnership with Boston University, the University of Maryland, the University of Toledo, Northern Arizona University and Yale University. We gratefully acknowledge ongoing support for telescope time from Yale University, the Heising-Simons Foundation, and an anonymous donor in the Yale community. We especially thank the NSF for funding that allowed for precise wavelength calibration and software pipelines through NSF ATI-1509436 and NSF AST-1616086 and for the construction of EXPRES through MRI-1429365.  LLZ gratefully acknowledges support from the National Science Foundation Graduate Research Fellowship under Grant No. DGE1122492.
 
 \bibliography{paper}
 
